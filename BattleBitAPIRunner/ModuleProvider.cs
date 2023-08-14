@@ -48,6 +48,8 @@ namespace BattleBitAPIRunner
 
         private static void compileProject(string csprojFilePath)
         {
+            Console.Write($"Compiling module {Path.GetFileNameWithoutExtension(csprojFilePath)}... ");
+
             var processInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
@@ -63,15 +65,19 @@ namespace BattleBitAPIRunner
                 process.StartInfo = processInfo;
                 process.Start();
 
-                process.WaitForExit();
-
+                _ = process.StandardOutput.ReadToEnd();
                 string errors = process.StandardError.ReadToEnd();
+
+                process.WaitForExit();
 
                 if (process.ExitCode != 0)
                 {
+                    Console.WriteLine();
                     throw new Exception($"Failed to compile module {Path.GetDirectoryName(csprojFilePath)}. Errors:{Environment.NewLine}{errors}");
                 }
             }
+
+            Console.WriteLine("Done");
         }
 
         //private void downloadNugetPackage(string packageName, string version)
