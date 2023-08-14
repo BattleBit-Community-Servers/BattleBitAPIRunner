@@ -55,6 +55,8 @@ namespace BattleBitAPIRunner
 
         private Task initializeGameServer(GameServer<RunnerPlayer> server)
         {
+            Console.WriteLine($"Initializing server {server.GameIP}:{server.GamePort}");
+
             foreach (Type moduleType in this.modules)
             {
                 try
