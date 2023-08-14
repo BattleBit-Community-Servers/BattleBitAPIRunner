@@ -32,7 +32,12 @@ namespace BattleBitAPIRunner
 
         public T? GetModule<T>() where T : BattleBitModule
         {
-            return this.modules.FirstOrDefault(m => m.GetType() == typeof(T)) as T;
+            return GetModule(typeof(T)) as T;
+        }
+
+        public BattleBitModule? GetModule(Type type)
+        {
+            return this.modules.FirstOrDefault(m => m.GetType() == type);
         }
 
         // TODO: this is fucked up and needs to be generalized

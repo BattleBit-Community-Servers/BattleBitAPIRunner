@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,7 +16,7 @@ namespace BattleBitAPIRunner
     {
         private const string PUBLISH_DIR = @"bin\Release\Publish";
 
-        public static Type LoadModule(string modulePath)
+        public static ModuleContext LoadModule(string modulePath)
         {
             if (!Directory.Exists(modulePath))
             {
@@ -36,14 +37,16 @@ namespace BattleBitAPIRunner
                 throw new FileNotFoundException("Module dll not found", moduleDllPath);
             }
 
-            Assembly assembly = Assembly.LoadFrom(moduleDllPath);
+            AssemblyLoadContext assemblyContext = new(Path.GetFileNameWithoutExtension(moduleDllPath));
+            Assembly assembly = assemblyContext.LoadFromAssemblyPath(moduleDllPath);
+
             IEnumerable<Type> moduleTypes = assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(BattleBitModule)));
             if (moduleTypes.Count() != 1)
             {
                 throw new Exception($"Module {Path.GetDirectoryName(modulePath)} does not contain a class that inherits from {nameof(BattleBitModule)}");
             }
 
-            return moduleTypes.First();
+            return new ModuleContext(assemblyContext, moduleTypes.First());
         }
 
         private static void compileProject(string csprojFilePath)
