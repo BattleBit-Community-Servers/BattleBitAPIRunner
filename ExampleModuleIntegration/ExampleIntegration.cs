@@ -2,9 +2,9 @@
 
 namespace ExampleModuleIntegration
 {
-    public class Example : BattleBitModule
+    public class ExampleIntegration : BattleBitModule
     {
-        public Example(RunnerServer server) : base(server)
+        public ExampleIntegration(RunnerServer server) : base(server)
         {
         }
 

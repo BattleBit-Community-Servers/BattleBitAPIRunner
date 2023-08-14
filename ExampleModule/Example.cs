@@ -18,7 +18,7 @@ namespace ExampleModule
             }
 
             // Since modules can be loaded and unloaded at runtime, it's recommended to check for the module every time it's used.
-            ExampleModuleIntegration.Example? integratedModule = this.Server.GetModule<ExampleModuleIntegration.Example>();
+            ExampleModuleIntegration.ExampleIntegration? integratedModule = this.Server.GetModule<ExampleModuleIntegration.ExampleIntegration>();
             if (integratedModule is not null)
             {
                 // This could, for example, be Discord webhooks that handles sending messages to Discord.
