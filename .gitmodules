@@ -1,0 +1,4 @@
+[submodule "BattleBit-Community-Server-API"]
+	path = BattleBit-Community-Server-API
+	url = https://github.com/MrOkiDoki/BattleBit-Community-Server-API.git
+	branch = main
