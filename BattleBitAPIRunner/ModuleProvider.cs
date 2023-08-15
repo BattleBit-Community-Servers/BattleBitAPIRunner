@@ -48,7 +48,7 @@ namespace BattleBitAPIRunner
                 return !fileName.Equals(Path.GetFileName(moduleDllPath), StringComparison.OrdinalIgnoreCase) && moduleFilter.All(mf => !fileName.Equals(mf, StringComparison.OrdinalIgnoreCase));
             }))
             {
-                assemblyContext.LoadFromAssemblyPath(dllFile);
+                assemblyContext.LoadFromAssemblyPath(Path.GetFullPath(dllFile));
             }
 
             IEnumerable<Type> moduleTypes = assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(BattleBitModule)));
