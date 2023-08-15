@@ -32,6 +32,7 @@ namespace BattleBitAPIRunner
 
         private void consoleCommandHandler()
         {
+            // TODO: Make proper console handler ncurses style (separate line for input, rest of window for output)
             while (true)
             {
                 string command = Console.ReadLine();
@@ -244,55 +245,5 @@ namespace BattleBitAPIRunner
             // TODO: this sucks.
             configuration.IPAddress = ipAddress;
         }
-
-        //private async Task moduleWatcher()
-        //{
-        //    Dictionary<string, DateTime> modulesLastModified = new();
-
-        //    while (true)
-        //    {
-        //        foreach (string moduleDirectory in Directory.GetDirectories(this.configuration.ModulePath))
-        //        {
-        //            DateTime lastModified = File.GetLastWriteTime(moduleDirectory);
-        //            if (modulesLastModified.TryGetValue(moduleDirectory, out DateTime moduleLastModified) && lastModified <= moduleLastModified)
-        //            {
-        //                continue;
-        //            }
-
-        //            modulesLastModified[moduleDirectory] = lastModified;
-
-        //            Type? module = null;
-        //            try
-        //            {
-        //                module = ModuleProvider.LoadModule(moduleDirecctory);
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                await Console.Error.WriteLineAsync($"Failed to load module {Path.GetFileName(moduleDirectory)}:{Environment.NewLine}{ex}");
-        //                continue;
-        //            }
-
-        //            await Console.Out.WriteLineAsync($"Found new or updated module {module.Name}");
-
-        //            try
-        //            {
-        //                BattleBitModule? instance = Activator.CreateInstance(module) as BattleBitModule;
-        //                if (instance is null)
-        //                {
-        //                    // This can not happen because it is validated by the ModuleProvider
-        //                    throw new Exception($"Module {module.Name} does not inherit from {nameof(BattleBitModule)}");
-        //                }
-
-        //                instance.OnLoad();
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                await Console.Error.WriteLineAsync($"Failed to load module {module.Name}:{Environment.NewLine}{ex}");
-        //            }
-        //        }
-
-        //        await Task.Delay(this.configuration.ModuleScanInterval);
-        //    }
-        //}
     }
 }
