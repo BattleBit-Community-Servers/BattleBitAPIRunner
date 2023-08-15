@@ -53,7 +53,7 @@ namespace BattleBitAPIRunner
                         }
 
                         string moduleName = commandParts[1];
-                        ModuleContext? moduleContext = this.modules.FirstOrDefault(x => x.Module.Name.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
+                        ModuleContext? moduleContext = this.modules.FirstOrDefault(x => x.Context.Name.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
 
 
                         if (commandParts[0].Equals("load", StringComparison.OrdinalIgnoreCase))
@@ -67,7 +67,14 @@ namespace BattleBitAPIRunner
 
                             try
                             {
-                                moduleContext = ModuleProvider.LoadModule(Directory.GetDirectories(this.configuration.ModulePath).Union(this.configuration.Modules).First(m => Path.GetDirectoryName(m).Equals(moduleName, StringComparison.OrdinalIgnoreCase)));
+                                string? modulePath = Directory.GetDirectories(this.configuration.ModulePath).Union(this.configuration.Modules).FirstOrDefault(m => Path.GetFileName(m).Equals(moduleName, StringComparison.OrdinalIgnoreCase));
+
+                                if (string.IsNullOrEmpty(modulePath))
+                                {
+                                    throw new FileNotFoundException("Module not found", modulePath);
+                                }
+
+                                moduleContext = ModuleProvider.LoadModule(modulePath);
                                 this.modules.Add(moduleContext);
 
                                 foreach (RunnerServer server in this.servers)
@@ -78,7 +85,7 @@ namespace BattleBitAPIRunner
                                         BattleBitModule module = Activator.CreateInstance(moduleContext.Module, server) as BattleBitModule;
                                         if (module is null)
                                         {
-                                            throw new Exception($"Module {moduleContext.Module.Name} does not inherit from {nameof(BattleBitModule)}");
+                                            throw new Exception($"Module {moduleContext.Context.Name} does not inherit from {nameof(BattleBitModule)}");
                                         }
                                         if (server.IsConnected)
                                         {
@@ -87,15 +94,15 @@ namespace BattleBitAPIRunner
                                     }
                                     catch (Exception ex)
                                     {
-                                        Console.WriteLine($"Failed to load module {moduleContext.Module.Name} for server {server.GameIP}:{server.GamePort}: {ex.Message}");
+                                        Console.WriteLine($"Failed to load module {moduleContext.Context.Name} for server {server.GameIP}:{server.GamePort}: {ex.Message}");
                                     }
                                 }
 
-                                Console.WriteLine($"Module {moduleContext.Module.Name} loaded.");
+                                Console.WriteLine($"Module {moduleContext.Context.Name} loaded.");
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"Failed to load module {moduleContext.Module.Name}: {ex.Message}");
+                                Console.WriteLine($"Failed to load module {moduleContext.Context.Name}: {ex.Message}");
                                 continue;
                             }
                         }
@@ -110,7 +117,7 @@ namespace BattleBitAPIRunner
 
                             unloadModule(moduleContext);
 
-                            Console.WriteLine($"Module {moduleContext.Module.Name} unloaded.");
+                            Console.WriteLine($"Module {moduleContext.Context.Name} unloaded.");
                         }
                         break;
                     default:
@@ -134,8 +141,7 @@ namespace BattleBitAPIRunner
                 server.RemoveModule(module);
             }
 
-            // TODO: does this work?
-            moduleContext.Context.Unload();
+            ModuleProvider.UnloadModule(moduleContext);
         }
 
         private void loadModules()
@@ -149,12 +155,12 @@ namespace BattleBitAPIRunner
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to load module {moduleDirectory}: {ex.Message}");
+                    Console.WriteLine($"Failed to load module {Path.GetFileName(moduleDirectory)}: {ex.Message}");
                     continue;
                 }
 
                 this.modules.Add(moduleContext);
-                Console.WriteLine($"Loaded module {moduleContext.Module.Name}");
+                Console.WriteLine($"Loaded module {moduleContext.Context.Name}");
             }
         }
 
@@ -175,12 +181,12 @@ namespace BattleBitAPIRunner
                     BattleBitModule module = Activator.CreateInstance(moduleContext.Module, server) as BattleBitModule;
                     if (module is null)
                     {
-                        throw new Exception($"Module {moduleContext.Module.Name} does not inherit from {nameof(BattleBitModule)}");
+                        throw new Exception($"Module {moduleContext.Context.Name} does not inherit from {nameof(BattleBitModule)}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to load module {moduleContext.Module.Name}: {ex.Message}");
+                    Console.WriteLine($"Failed to load module {moduleContext.Context.Name}: {ex.Message}");
                 }
             }
 
@@ -205,23 +211,22 @@ namespace BattleBitAPIRunner
         {
             List<ValidationResult> validationResults = new();
             IPAddress? ipAddress = null;
-            if (!Validator.TryValidateObject(this.configuration, new ValidationContext(this.configuration), validationResults, true) || !IPAddress.TryParse(this.configuration.IP, out ipAddress) || !Directory.Exists(this.configuration.ModulePath))
+            if (!Validator.TryValidateObject(this.configuration, new ValidationContext(this.configuration), validationResults, true) || !IPAddress.TryParse(this.configuration.IP, out ipAddress))
             {
                 StringBuilder error = new();
                 error.AppendLine($"Invalid configuration:{Environment.NewLine}{string.Join(Environment.NewLine, validationResults.Select(x => x.ErrorMessage))}");
 
                 if (ipAddress is null)
                 {
-                    error.AppendLine("IP address is invalid");
-                }
-
-                // TODO: this sucks.
-                if (!Directory.Exists(this.configuration.ModulePath))
-                {
-                    error.AppendLine("Module path does not exist");
+                    error.AppendLine("IP address is invalid.");
                 }
 
                 throw new Exception(error.ToString());
+            }
+
+            if (!Directory.Exists(this.configuration.ModulePath))
+            {
+                Directory.CreateDirectory(this.configuration.ModulePath);
             }
 
             // TODO: this sucks.

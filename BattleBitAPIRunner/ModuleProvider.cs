@@ -26,7 +26,7 @@ namespace BattleBitAPIRunner
             string[] modulesCsprojFiles = Directory.GetFiles(modulePath, "*.csproj").ToArray();
             if (modulesCsprojFiles.Length != 1)
             {
-                throw new Exception($"Module {Path.GetDirectoryName(modulePath)} does not contain one singular csproj file");
+                throw new Exception($"Module {Path.GetFileName(modulePath)} does not contain one singular csproj file");
             }
 
             compileProject(modulesCsprojFiles.First());
@@ -37,13 +37,13 @@ namespace BattleBitAPIRunner
                 throw new FileNotFoundException("Module dll not found", moduleDllPath);
             }
 
-            AssemblyLoadContext assemblyContext = new(Path.GetFileNameWithoutExtension(moduleDllPath));
+            AssemblyLoadContext assemblyContext = new(Path.GetFileNameWithoutExtension(moduleDllPath), true);
             Assembly assembly = assemblyContext.LoadFromAssemblyPath(moduleDllPath);
 
             IEnumerable<Type> moduleTypes = assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(BattleBitModule)));
             if (moduleTypes.Count() != 1)
             {
-                throw new Exception($"Module {Path.GetDirectoryName(modulePath)} does not contain a class that inherits from {nameof(BattleBitModule)}");
+                throw new Exception($"Module {Path.GetFileName(modulePath)} does not contain a class that inherits from {nameof(BattleBitModule)}");
             }
 
             return new ModuleContext(assemblyContext, moduleTypes.First());
@@ -52,6 +52,7 @@ namespace BattleBitAPIRunner
         private static void compileProject(string csprojFilePath)
         {
             Console.Write($"Compiling module {Path.GetFileNameWithoutExtension(csprojFilePath)}... ");
+            Stopwatch stopwatch = Stopwatch.StartNew();
 
             var processInfo = new ProcessStartInfo
             {
@@ -76,11 +77,16 @@ namespace BattleBitAPIRunner
                 if (process.ExitCode != 0)
                 {
                     Console.WriteLine();
-                    throw new Exception($"Failed to compile module {Path.GetDirectoryName(csprojFilePath)}. Errors:{Environment.NewLine}{errors}");
+                    throw new Exception($"Failed to compile module {Path.GetFileName(csprojFilePath)} (took {Math.Round(stopwatch.Elapsed.TotalSeconds, 1)}s). Errors:{Environment.NewLine}{errors}");
                 }
             }
 
-            Console.WriteLine("Done");
+            Console.WriteLine($"Completed in {Math.Round(stopwatch.Elapsed.TotalSeconds, 1)}s");
+        }
+
+        public static void UnloadModule(ModuleContext moduleContext)
+        {
+            moduleContext.Context.Unload();
         }
     }
 }
