@@ -20,8 +20,6 @@ namespace BattleBitAPIRunner
 
         public string ModulePath { get; set; } = "./modules";
 
-        public int ModuleScanInterval { get; set; } = 1000;
-
         public string[] Modules { get; set; } = Array.Empty<string>();
     }
 }
