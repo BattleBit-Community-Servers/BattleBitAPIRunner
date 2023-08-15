@@ -1,5 +1,6 @@
 ﻿using BattleBitAPI.Common;
 using BattleBitAPIRunner;
+using Newtonsoft.Json;
 using System.Diagnostics;
 
 namespace ExampleModule
@@ -14,7 +15,8 @@ namespace ExampleModule
         {
             if (msg == "ping")
             {
-                this.Server.SayToChat("pong");
+                // Usage of packages is supported
+                this.Server.SayToChat(JsonConvert.SerializeObject("pong"));
             }
 
             // Since modules can be loaded and unloaded at runtime, it's recommended to check for the module every time it's used.
