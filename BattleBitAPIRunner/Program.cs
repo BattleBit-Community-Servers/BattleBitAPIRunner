@@ -69,7 +69,6 @@ namespace BattleBitAPIRunner
                         string moduleName = commandParts[1];
                         ModuleContext? moduleContext = this.modules.FirstOrDefault(x => x.Context.Name.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
 
-
                         if (commandParts[0].Equals("load", StringComparison.OrdinalIgnoreCase))
                         {
                             // Load
@@ -81,7 +80,7 @@ namespace BattleBitAPIRunner
 
                             try
                             {
-                                string? modulePath = Directory.GetDirectories(this.configuration.ModulePath).Union(this.configuration.Modules).FirstOrDefault(m => Path.GetFileName(m).Equals(moduleName, StringComparison.OrdinalIgnoreCase));
+                                string? modulePath = Directory.GetDirectories(this.configuration.ModulesPath).Union(this.configuration.Modules).FirstOrDefault(m => Path.GetFileName(m).Equals(moduleName, StringComparison.OrdinalIgnoreCase));
 
                                 if (string.IsNullOrEmpty(modulePath))
                                 {
@@ -161,7 +160,7 @@ namespace BattleBitAPIRunner
 
         private void loadModules()
         {
-            foreach (string moduleDirectory in Directory.GetDirectories(this.configuration.ModulePath).Union(this.configuration.Modules))
+            foreach (string moduleDirectory in Directory.GetDirectories(this.configuration.ModulesPath).Union(this.configuration.Modules))
             {
                 ModuleContext moduleContext;
                 try
@@ -240,9 +239,9 @@ namespace BattleBitAPIRunner
                 throw new Exception(error.ToString());
             }
 
-            if (!Directory.Exists(this.configuration.ModulePath))
+            if (!Directory.Exists(this.configuration.ModulesPath))
             {
-                Directory.CreateDirectory(this.configuration.ModulePath);
+                Directory.CreateDirectory(this.configuration.ModulesPath);
             }
 
             // TODO: this sucks.
