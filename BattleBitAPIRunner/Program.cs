@@ -44,6 +44,18 @@ namespace BattleBitAPIRunner
 
                 switch (commandParts[0])
                 {
+                    case "servers":
+                        foreach (RunnerServer server in this.servers)
+                        {
+                            Console.WriteLine($"{server.GameIP}:{server.GamePort} - {server.IsConnected}");
+                        }
+                        break;
+                    case "list":
+                        foreach (ModuleContext context in this.modules)
+                        {
+                            Console.WriteLine(context.Context.Name);
+                        }
+                        break;
                     case "unload":
                     case "load":
                         if (commandParts.Length < 2)
