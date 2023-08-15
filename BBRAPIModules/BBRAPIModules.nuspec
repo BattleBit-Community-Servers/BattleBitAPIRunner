@@ -1,0 +1,20 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>BBRAPIModules</id>
+    <version>0.0.2</version>
+    <title>BattleBit Remastered Modular Community Server API</title>
+    <authors>RainOrigami</authors>
+    <projectUrl>https://github.com/RainOrigami/BattleBitAPIRunner</projectUrl>
+    <description>Modularize your BattleBit Remastered Community Server API</description>
+    <tags>battlebit, battle bit, remastered, community server, api, modules, modular</tags>
+    <repository url="https://github.com/RainOrigami/BattleBitAPIRunner" />
+    <dependencies>
+      <group targetFramework="net6.0" />
+    </dependencies>
+  </metadata>
+   <files>
+     <file src="bin\Release\net6.0\CommunityServerAPI.dll" target="lib\net6.0" />
+     <file src="bin\Release\net6.0\BBRAPIModules.dll" target="lib\net6.0" />
+  </files>
+</package>
