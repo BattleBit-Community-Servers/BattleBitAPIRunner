@@ -108,7 +108,7 @@ namespace BattleBitAPIRunner
                                     }
                                     catch (Exception ex)
                                     {
-                                        Console.WriteLine($"Failed to load module {moduleContext.Context.Name} for server {server.GameIP}:{server.GamePort}: {ex.Message}");
+                                        Console.WriteLine($"Failed to load module {moduleContext.Context.Name} for server {server.GameIP}:{server.GamePort}: {ex}");
                                     }
                                 }
 
@@ -116,7 +116,7 @@ namespace BattleBitAPIRunner
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"Failed to load module {moduleContext.Context.Name}: {ex.Message}");
+                                Console.WriteLine($"Failed to load module {(moduleContext?.Context?.Name ?? moduleName)}: {ex}");
                                 continue;
                             }
                         }
@@ -169,7 +169,7 @@ namespace BattleBitAPIRunner
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to load module {Path.GetFileName(moduleDirectory)}: {ex.Message}");
+                    Console.WriteLine($"Failed to load module {Path.GetFileName(moduleDirectory)}: {ex}");
                     continue;
                 }
 
@@ -201,7 +201,7 @@ namespace BattleBitAPIRunner
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to load module {moduleContext.Context.Name}: {ex.Message}");
+                    Console.WriteLine($"Failed to load module {moduleContext.Context.Name}: {ex}");
                 }
             }
 

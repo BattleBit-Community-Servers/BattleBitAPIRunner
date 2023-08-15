@@ -58,7 +58,7 @@ namespace BBRAPIModules
                 }
                 catch (Exception ex)
                 {
-                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} threw an exception: {ex.Message}");
+                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} threw an exception: {ex}");
                 }
                 stopwatch.Stop();
 
@@ -85,7 +85,7 @@ namespace BBRAPIModules
                 }
                 catch (Exception ex)
                 {
-                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} threw an exception: {ex.Message}");
+                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} threw an exception: {ex}");
                 }
                 stopwatch.Stop();
 
@@ -110,7 +110,7 @@ namespace BBRAPIModules
                 }
                 catch (Exception ex)
                 {
-                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} threw an exception: {ex.Message}");
+                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} threw an exception: {ex}");
                 }
                 stopwatch.Stop();
 
