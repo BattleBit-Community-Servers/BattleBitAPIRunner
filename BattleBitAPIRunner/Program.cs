@@ -1,4 +1,5 @@
 ﻿using BattleBitAPI.Server;
+using BBRAPIModules;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.Extensions.Configuration;
 using System.ComponentModel.DataAnnotations;
@@ -100,6 +101,7 @@ namespace BattleBitAPIRunner
                                         {
                                             throw new Exception($"Module {moduleContext.Context.Name} does not inherit from {nameof(BattleBitModule)}");
                                         }
+                                        server.AddModule(module);
                                         if (server.IsConnected)
                                         {
                                             module.OnConnected();
@@ -196,6 +198,7 @@ namespace BattleBitAPIRunner
                     {
                         throw new Exception($"Module {moduleContext.Context.Name} does not inherit from {nameof(BattleBitModule)}");
                     }
+                    ((RunnerServer)server).AddModule(module);
                 }
                 catch (Exception ex)
                 {

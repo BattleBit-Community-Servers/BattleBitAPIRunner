@@ -1,16 +1,14 @@
 ﻿using BattleBitAPI.Common;
 using BattleBitAPI.Server;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Diagnostics;
-using System.Reflection;
 
-namespace BattleBitAPIRunner
+namespace BBRAPIModules
 {
     public class RunnerServer : GameServer<RunnerPlayer>
     {
         private List<BattleBitModule> modules = new();
 
-        internal void AddModule(BattleBitModule module)
+        public void AddModule(BattleBitModule module)
         {
             if (this.modules.Any(m => m.GetType() == module.GetType()))
             {
@@ -20,7 +18,7 @@ namespace BattleBitAPIRunner
             this.modules.Add(module);
         }
 
-        internal void RemoveModule(BattleBitModule module)
+        public void RemoveModule(BattleBitModule module)
         {
             if (this.modules.All(m => m.GetType() != module.GetType()))
             {

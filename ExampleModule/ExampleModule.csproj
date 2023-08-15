@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BattleBitAPIRunner\BattleBitAPIRunner.csproj" />
+    <ProjectReference Include="..\BBRAPIModules\BBRAPIModules.csproj" />
     <ProjectReference Include="..\ExampleModuleIntegration\ExampleModuleIntegration.csproj" />
   </ItemGroup>
 

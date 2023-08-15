@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BattleBit-Community-Server-API\CommunityServerAPI.csproj" />
+  </ItemGroup>
+
 </Project>

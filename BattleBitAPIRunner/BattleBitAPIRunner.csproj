@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BattleBit-Community-Server-API\CommunityServerAPI.csproj" />
+    <ProjectReference Include="..\BBRAPIModules\BBRAPIModules.csproj" />
   </ItemGroup>
 
 </Project>

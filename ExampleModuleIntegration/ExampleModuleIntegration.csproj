@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BattleBitAPIRunner\BattleBitAPIRunner.csproj" />
+    <ProjectReference Include="..\BBRAPIModules\BBRAPIModules.csproj" />
   </ItemGroup>
 
 </Project>
