@@ -16,6 +16,7 @@ namespace BattleBitAPIRunner
     internal static class ModuleProvider
     {
         private const string PUBLISH_DIR = @"bin\Release\Publish";
+        private static readonly string[] moduleFilter = new[] { "BBRAPIModules.dll", "CommunityServerAPI.dll" };
 
         public static ModuleContext LoadModule(string modulePath)
         {
@@ -39,7 +40,16 @@ namespace BattleBitAPIRunner
             }
 
             AssemblyLoadContext assemblyContext = new(Path.GetFileNameWithoutExtension(moduleDllPath), true);
-            Assembly assembly = assemblyContext.LoadFromAssemblyPath(moduleDllPath);
+            Assembly assembly = assemblyContext.LoadFromAssemblyPath(Path.GetFullPath(moduleDllPath));
+
+            foreach (string dllFile in Directory.GetFiles(Path.Combine(modulePath, PUBLISH_DIR), "*.dll").Where(f =>
+            {
+                string fileName = Path.GetFileName(f);
+                return !fileName.Equals(Path.GetFileName(moduleDllPath), StringComparison.OrdinalIgnoreCase) && moduleFilter.All(mf => !fileName.Equals(mf, StringComparison.OrdinalIgnoreCase));
+            }))
+            {
+                assemblyContext.LoadFromAssemblyPath(dllFile);
+            }
 
             IEnumerable<Type> moduleTypes = assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(BattleBitModule)));
             if (moduleTypes.Count() != 1)
