@@ -64,3 +64,11 @@ namespace ExampleModuleIntegration
     }
 }
 ```
+
+## Some modules
+
+- https://github.com/RainOrigami/BattleBitDiscordWebhooks - Sends messages to a discord webhook when a player joins, leaves, chats or a server connects or disconnects from the api. Can also be used as a library in other modules to send custom messages.
+- https://github.com/RainOrigami/BattleBitZombies - 28 days later inspired zombie pvp game mode module
+- https://github.com/RainOrigami/BattleBitPlayerFinder - WORK IN PROGRESS - Library module that enables finding players based on a number of different things (steamid, partial name, ...)
+- https://github.com/RainOrigami/BattleBitPermission - WORK IN PROGRESS - Permissions manager for persistent player permissions and permission management. Most useful as a library for other modules to use per-player permissions.
+- https://github.com/RainOrigami/BattleBitCommands - WORK IN PROGRESS - Library module for easy chat and console command handling
