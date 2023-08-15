@@ -18,7 +18,7 @@ namespace BattleBitAPIRunner
 
         public IPAddress? IPAddress { get; set; }
 
-        public string ModulePath { get; set; } = "./modules";
+        public string ModulesPath { get; set; } = "./modules";
 
         public string[] Modules { get; set; } = Array.Empty<string>();
     }
