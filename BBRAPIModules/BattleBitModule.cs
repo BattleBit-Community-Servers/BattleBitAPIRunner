@@ -1,4 +1,5 @@
 ﻿using BattleBitAPI.Common;
+using System.Runtime.CompilerServices;
 
 namespace BBRAPIModules
 {
@@ -10,6 +11,8 @@ namespace BBRAPIModules
         {
             this.Server = server;
         }
+
+        public virtual void OnModulesLoaded() { } // sighs silently
 
         #region GameServer.cs copy-paste
         // TODO: there must be a better way to do this!?
