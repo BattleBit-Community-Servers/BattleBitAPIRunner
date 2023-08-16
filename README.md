@@ -6,10 +6,11 @@ Modular battlebit community server api runner. Lets you host community servers w
 
 - Start the community server API endpoint for your server to connect to
 - Dynamically load and unload modules
-- Modules are simply git cloned into the module directory
+- Modules are simple C# source files `.cs`
 - Modules are compiled in runtime, letting you change them ad-hoc
 - Supports debugging of modules (simply attach your debugger)
-- Modules support nuget packages, project references
+- Modules support module dependencies
+- Modules support binary dependencies (Newtonsoft.Json, System.Net.Http, ...)
 
 ## Configuration
 
@@ -18,57 +19,45 @@ Modular battlebit community server api runner. Lets you host community servers w
   "IP": "127.0.0.1",
   "Port": 29595,
   "ModulePath": "./modules",
-  "Modules": []
+  "Modules": [ "C:\\path\\to\\specific\\ModuleFile.cs" ],
+  "DependencyPath": "./dependencies"
 }
 ```
 - IP: Listening IP
 - Port: Listening port
 - ModulePath: Path to the folder containing all modules (is created if not exist)
-- Modules: Array of individual module paths
+- Modules: Array of individual module file paths
+- DependencyPath: Path to the folder containing all binary dependencies (dlls)
 
 ## Usage
 
-Download a release, unpack, configure and start.
-You can then git clone modules into your module directory and load them by typing `load modulefoldername` into the console.
-Unload modules by typing `unload modulefoldername`. Reload modules by typing `load modulefoldername`.
+Download the latest release, unpack, configure and start.
+You can then copy modules into your module directory and load them by typing `load ModuleName` into the console.
+Unload modules by typing `unload modulefilename`. Reload modules by typing `load modulefilename`.
 
 ## Developing modules
 
-Modules are .net 6 projects. They are compiled in runtime, so you can change them ad-hoc.
+Modules are .net 6.0 C# source code files. They are compiled in runtime, so you can change them ad-hoc.
 To debug a module, simply attach your debugger to the BattleBitAPIRunner process.
 
-To create a module, reference BattleBitAPIRunner in your project and inherit from `BattleBitAPIRunner.BattleBitModule`.
-You can then override all regular GameServer methods in the module. The GameServer object is available as `BattleBitModule.Server`.
+To create a module, create a (library) .net 6.0 C# project.
+Set `ImplicitUsings` to `disabled`, for example by unchecking `Enable implicit global usings to be declared by the project SDK.` in the project settings.
+Add a nuget dependency to [BBRAPIModules](https://www.nuget.org/packages/BBRAPIModules).
+In your module source file, have exactly one public class which has the same name as your file and inherit `BBRAPIModules.BattleBitModule`.
+Your module class now has all methods of the BattleBit API, such as `OnConnected`.
 
-You can also access other modules by using `BattleBitModule.Server.GetModule<ModuleType>()`. See ExampleModule for an example.
+To use module dependencies, for each dependent module, add the module source file to your project and add a `[RequireModule(typeof(DependantModule))]` attribute to your class.
+You can assign all your dependant modules to fields in the `OnModulesLoaded` method which gets called once all modules are available.
+Use `this.Server.GetModule<DependantModule>()` to retrieve the module instance of the server.
 
-## Example module
+### Example modules
 
-```cs
-using BattleBitAPI.Common;
-using BattleBitAPIRunner;
+- https://github.com/RainOrigami/BattleBitExamples
 
-namespace ExampleModuleIntegration
-{
-    public class ExampleIntegration : BattleBitModule
-    {
-        public ExampleIntegration(RunnerServer server) : base(server)
-        {
-        }
+## Base modules
 
-        public override Task<bool> OnPlayerTypedMessage(RunnerPlayer player, ChatChannel channel, string msg)
-        {
-            this.Server.SayToChat($"Player {player.Name} is about to say something!");
-            return Task.FromResult(true);
-        }
-    }
-}
-```
+- https://github.com/RainOrigami/BattleBitBaseModules (PlayerFinder, PlayerPermissions, CommandHandler, PermissionsCommands, DiscordWebhooks)
 
-## Some modules
+## Other modules
 
-- https://github.com/RainOrigami/BattleBitDiscordWebhooks - Sends messages to a discord webhook when a player joins, leaves, chats or a server connects or disconnects from the api. Can also be used as a library in other modules to send custom messages.
 - https://github.com/RainOrigami/BattleBitZombies - 28 days later inspired zombie pvp game mode module
-- https://github.com/RainOrigami/BattleBitPlayerFinder - WORK IN PROGRESS - Library module that enables finding players based on a number of different things (steamid, partial name, ...)
-- https://github.com/RainOrigami/BattleBitPermission - WORK IN PROGRESS - Permissions manager for persistent player permissions and permission management. Most useful as a library for other modules to use per-player permissions.
-- https://github.com/RainOrigami/BattleBitCommands - WORK IN PROGRESS - Library module for easy chat and console command handling
