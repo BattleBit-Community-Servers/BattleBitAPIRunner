@@ -8,13 +8,13 @@ namespace BattleBitAPIRunner
 {
     internal class ModuleMissingRequirements
     {
-        public ModuleMissingRequirements(ModuleContext moduleContext, Type[] missingModules)
+        public ModuleMissingRequirements(Module module, Type[] missingModules)
         {
-            this.ModuleContext = moduleContext;
+            this.Module = module;
             this.MissingModules = missingModules;
         }
 
-        public ModuleContext ModuleContext { get; }
+        public Module Module { get; }
         public Type[] MissingModules { get; }
     }
 }

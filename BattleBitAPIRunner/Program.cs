@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Xml.Linq;
 
 namespace BattleBitAPIRunner
 {
@@ -17,7 +18,6 @@ namespace BattleBitAPIRunner
         }
 
         private ServerConfiguration configuration = new();
-        private List<ModuleContext> modules = new();
         private List<RunnerServer> servers = new();
         private ServerListener<RunnerPlayer, RunnerServer> serverListener = new();
 
@@ -25,11 +25,25 @@ namespace BattleBitAPIRunner
         {
             loadConfiguration();
             validateConfiguration();
+            loadDependencies();
             loadModules();
             hookModules();
             startServerListener();
 
             consoleCommandHandler();
+        }
+
+        private void loadDependencies()
+        {
+            if (!Directory.Exists(this.configuration.DependencyPath))
+            {
+                Directory.CreateDirectory(this.configuration.DependencyPath);
+            }
+
+            foreach (string dependency in Directory.GetFiles(this.configuration.DependencyPath, "*.dll"))
+            {
+                Assembly.LoadFrom(dependency);
+            }
         }
 
         private void consoleCommandHandler()
@@ -54,9 +68,9 @@ namespace BattleBitAPIRunner
                         }
                         break;
                     case "list":
-                        foreach (ModuleContext context in this.modules)
+                        foreach (Module module in Module.Modules)
                         {
-                            Console.WriteLine(context.Context.Name);
+                            Console.WriteLine(module.Name);
                         }
                         break;
                     case "unload":
@@ -67,87 +81,13 @@ namespace BattleBitAPIRunner
                             continue;
                         }
 
-                        string moduleName = commandParts[1];
-                        ModuleContext? moduleContext = this.modules.FirstOrDefault(x => x.Context.Name.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
-
                         if (commandParts[0].Equals("load", StringComparison.OrdinalIgnoreCase))
                         {
-                            // Load
-                            if (moduleContext is not null)
-                            {
-                                // Remove module first
-                                unloadModule(moduleContext);
-                            }
-
-                            try
-                            {
-                                string? modulePath = Directory.GetDirectories(this.configuration.ModulesPath).Union(this.configuration.Modules).FirstOrDefault(m => Path.GetFileName(m).Equals(moduleName, StringComparison.OrdinalIgnoreCase));
-
-                                if (string.IsNullOrEmpty(modulePath))
-                                {
-                                    throw new FileNotFoundException("Module not found", modulePath);
-                                }
-
-                                moduleContext = ModuleProvider.LoadModule(modulePath);
-                                this.modules.Add(moduleContext);
-
-                                Type[] missingRequiredModules = this.unsatisfiedRequiredModules(moduleContext);
-                                if (missingRequiredModules.Length > 0)
-                                {
-                                    Console.WriteLine($"Failed to load module {moduleContext.Context.Name} because of unsatisfied required modules:");
-                                    Console.WriteLine(string.Join(Environment.NewLine, missingRequiredModules.Select(m => $"- {m.Name}")));
-                                    Console.WriteLine("Add them to your module directory and load them before loading this module.");
-                                    this.unloadModule(moduleContext);
-                                    return;
-                                }
-
-                                foreach (RunnerServer server in this.servers)
-                                {
-                                    try
-                                    {
-                                        // TODO: consolidate with module loading
-                                        BattleBitModule module = Activator.CreateInstance(moduleContext.Module, server) as BattleBitModule;
-                                        if (module is null)
-                                        {
-                                            // this can't really happen
-                                            throw new Exception($"Module {moduleContext.Context.Name} does not inherit from {nameof(BattleBitModule)}");
-                                        }
-                                        server.AddModule(module);
-                                        Task.Run(async () =>
-                                        {
-                                            module.OnModulesLoaded();
-                                            if (server.IsConnected)
-                                            {
-                                                await module.OnConnected();
-                                            }
-                                        });
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Console.WriteLine($"Failed to load module {moduleContext.Context.Name} for server {server.GameIP}:{server.GamePort}: {ex}");
-                                    }
-                                }
-
-                                Console.WriteLine($"Module {moduleContext.Context.Name} loaded.");
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Failed to load module {(moduleContext?.Context?.Name ?? moduleName)}: {ex}");
-                                continue;
-                            }
+                            tryLoadModuleFromName(commandParts[1]);
                         }
                         else
                         {
-                            // Unload
-                            if (moduleContext is null)
-                            {
-                                Console.WriteLine($"Module {moduleName} not found");
-                                continue;
-                            }
-
-                            unloadModule(moduleContext);
-
-                            Console.WriteLine($"Module {moduleContext.Context.Name} unloaded.");
+                            tryUnloadModuleFromName(commandParts[1]);
                         }
                         break;
                     default:
@@ -156,88 +96,145 @@ namespace BattleBitAPIRunner
             }
         }
 
-        private void unloadModule(ModuleContext moduleContext)
+        private void tryUnloadModuleFromName(string name)
         {
-            this.modules.Remove(moduleContext);
+            Module? module = Module.Modules.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+            if (module is null)
+            {
+                Console.WriteLine($"Module {name} not found");
+                return;
+            }
+
+            this.unloadModuleFromServers(module);
+            module.Unload();
+
+            Console.WriteLine($"Module {module.Name} unloaded.");
+        }
+
+        private void tryLoadModuleFromName(string name)
+        {
+            Module? module = Module.Modules.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+            if (module is not null)
+            {
+                unloadModuleFromServers(module);
+                module.Unload();
+            }
+
+            try
+            {
+                if (module is null)
+                {
+                    module = new Module(Path.Combine(this.configuration.ModulesPath, $"{name}.cs"));
+                }
+                else
+                {
+                    module.Reload();
+                }
+
+                foreach (string dependency in module.Dependencies)
+                {
+                    if (Module.Modules.FirstOrDefault(m => m.Name.Equals(dependency, StringComparison.OrdinalIgnoreCase)) is null)
+                    {
+                        throw new Exception($"Module {name} requires module {dependency} which is not loaded.");
+                    }
+                }
+
+                module.Compile();
+                module.Load();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load module {(module?.Name ?? name)}: {ex}");
+                return;
+            }
+
+            this.loadModuleToServers(module, true);
+
+            Console.WriteLine($"Module {module.Name} loaded.");
+        }
+
+        private void unloadModuleFromServers(Module module)
+        {
+            // TODO: requires unloading of dependant modules as well
 
             foreach (RunnerServer server in this.servers)
             {
-                BattleBitModule? module = server.GetModule(moduleContext.Module);
-                if (module is null)
+                BattleBitModule? moduleInstance = server.GetModule(module.ModuleType);
+                if (moduleInstance is null)
                 {
                     continue;
                 }
 
-                server.RemoveModule(module);
+                server.RemoveModule(moduleInstance);
             }
+        }
 
-            ModuleProvider.UnloadModule(moduleContext);
+        private void loadModuleToServers(Module module, bool immediateStart = false)
+        {
+            foreach (RunnerServer server in this.servers)
+            {
+                try
+                {
+                    BattleBitModule moduleInstance = Activator.CreateInstance(module.ModuleType, server) as BattleBitModule;
+                    if (moduleInstance is null)
+                    {
+                        // this can't really happen
+                        throw new Exception($"Module {module.Name} does not inherit from {nameof(BattleBitModule)}");
+                    }
+                    server.AddModule(moduleInstance);
+
+                    if (immediateStart)
+                    {
+                        Task.Run(async () =>
+                        {
+                            moduleInstance.OnModulesLoaded();
+                            if (server.IsConnected)
+                            {
+                                await moduleInstance.OnConnected();
+                            }
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to load module {module.Context.Name} for server {server.GameIP}:{server.GamePort}: {ex}");
+                }
+            }
         }
 
         private void loadModules()
         {
-            List<ModuleContext> newlyLoadedModules = new();
-            foreach (string moduleDirectory in Directory.GetDirectories(this.configuration.ModulesPath).Union(this.configuration.Modules))
+            Module[] modules = Directory.GetFiles(this.configuration.ModulesPath, "*.cs").Union(this.configuration.Modules).Select(m =>
             {
-                ModuleContext? moduleContext = null;
+                try { return new Module(m); }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to load module {Path.GetFileName(m)}: {ex}");
+                    return null;
+                }
+            }).Where(m => m is not null).Select(m => m!).ToArray();
+
+            Module[] sortedModules = new ModuleDependencyResolver(modules).GetDependencyOrder().ToArray();
+
+            foreach (Module module in sortedModules)
+            {
                 try
                 {
-                    moduleContext = ModuleProvider.LoadModule(moduleDirectory);
+                    module.Compile();
+                    module.Load();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to load module {Path.GetFileName(moduleDirectory)}: {ex}");
+                    Console.WriteLine($"Failed to load module {Path.GetFileName(module.Name)}: {ex}");
                     continue;
                 }
 
-                this.modules.Add(moduleContext);
-                newlyLoadedModules.Add(moduleContext);
-                Console.WriteLine($"Loaded module {moduleContext.Context.Name}");
+                Console.WriteLine($"Loaded module {module.Name}");
             }
 
-            // TODO: issue: module a requires b, which requires c. a and b exist, c doesn't. a gets validated, all requirements met. b gets validated, missing requirements. b gets unloaded.
-            // at this point a requirements are no longer met but validation for a has already passed.
-            // Any module that is removed due to having missing requirements must also trigger unloading of all modules where it is a requirement in
-            foreach (ModuleMissingRequirements moduleMissingRequirements in this.getModulesWithUnsatisfiedRequiredModules(this.modules.ToArray()))
-            {
-                Console.WriteLine($"Failed to load module {moduleMissingRequirements.ModuleContext.Context.Name} because of unsatisfied required modules:");
-                Console.WriteLine(string.Join(Environment.NewLine, moduleMissingRequirements.MissingModules.Select(m => $"- {m.Name}")));
-                Console.WriteLine("Add them to your module directory and load them before loading this module.");
-                this.unloadModule(moduleMissingRequirements.ModuleContext);
-                newlyLoadedModules.Remove(moduleMissingRequirements.ModuleContext);
-            }
-
-            Console.WriteLine($"{this.modules.Count} modules loaded.");
-        }
-
-        private ModuleMissingRequirements[] getModulesWithUnsatisfiedRequiredModules(ModuleContext[] modules)
-        {
-            List<ModuleMissingRequirements> modulesMissingRequirements = new();
-
-            foreach (ModuleContext moduleContext in modules)
-            {
-                Type[] missingModules = this.unsatisfiedRequiredModules(moduleContext);
-
-                if (missingModules.Any())
-                {
-                    modulesMissingRequirements.Add(new ModuleMissingRequirements(moduleContext, missingModules));
-                }
-            }
-
-            return modulesMissingRequirements.ToArray();
-        }
-
-        private Type[] unsatisfiedRequiredModules(ModuleContext context)
-        {
-            List<Type> requiredMissingModules = new();
-            foreach (RequireModuleAttribute requireModuleAttribute in context.Module.GetCustomAttributes<RequireModuleAttribute>())
-            {
-                if (this.modules.All(m => m.Module != requireModuleAttribute.ModuleType))
-                {
-                    requiredMissingModules.Add(requireModuleAttribute.ModuleType);
-                }
-            }
-            return requiredMissingModules.ToArray();
+            Console.WriteLine($"{Module.Modules.Count} modules loaded.");
         }
 
         private void hookModules()
@@ -251,11 +248,11 @@ namespace BattleBitAPIRunner
 
             List<BattleBitModule> battleBitModules = new();
 
-            foreach (ModuleContext moduleContext in this.modules)
+            foreach (Module moduleContext in Module.Modules)
             {
                 try
                 {
-                    BattleBitModule module = Activator.CreateInstance(moduleContext.Module, server) as BattleBitModule;
+                    BattleBitModule module = Activator.CreateInstance(moduleContext.ModuleType, server) as BattleBitModule;
                     if (module is null)
                     {
                         throw new Exception($"Module {moduleContext.Context.Name} does not inherit from {nameof(BattleBitModule)}");

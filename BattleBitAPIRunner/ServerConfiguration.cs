@@ -21,5 +21,7 @@ namespace BattleBitAPIRunner
         public string ModulesPath { get; set; } = "./modules";
 
         public string[] Modules { get; set; } = Array.Empty<string>();
+
+        public string DependencyPath { get; set; } = "./dependencies";
     }
 }
