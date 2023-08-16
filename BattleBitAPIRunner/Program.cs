@@ -206,6 +206,8 @@ namespace BattleBitAPIRunner
                 this.unloadModule(moduleMissingRequirements.ModuleContext);
                 newlyLoadedModules.Remove(moduleMissingRequirements.ModuleContext);
             }
+
+            Console.WriteLine($"{this.modules.Count} modules loaded.");
         }
 
         private ModuleMissingRequirements[] getModulesWithUnsatisfiedRequiredModules(ModuleContext[] modules)
@@ -278,6 +280,7 @@ namespace BattleBitAPIRunner
         private void startServerListener()
         {
             this.serverListener.Start(this.configuration.IPAddress, this.configuration.Port!.Value);
+            Console.WriteLine($"Listener started at {this.configuration.IPAddress}:{this.configuration.Port.Value}");
         }
 
         private void loadConfiguration()

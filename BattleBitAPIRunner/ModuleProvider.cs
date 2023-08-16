@@ -39,8 +39,7 @@ namespace BattleBitAPIRunner
                 throw new FileNotFoundException("Module dll not found", moduleDllPath);
             }
 
-            AssemblyLoadContext assemblyContext = new(Path.GetFileNameWithoutExtension(moduleDllPath), true);
-            Assembly assembly = assemblyContext.LoadFromAssemblyPath(Path.GetFullPath(moduleDllPath));
+            Assembly assembly = Assembly.LoadFrom(Path.GetFullPath(moduleDllPath));
 
             foreach (string dllFile in Directory.GetFiles(Path.Combine(modulePath, PUBLISH_DIR), "*.dll").Where(f =>
             {
@@ -48,7 +47,7 @@ namespace BattleBitAPIRunner
                 return !fileName.Equals(Path.GetFileName(moduleDllPath), StringComparison.OrdinalIgnoreCase) && moduleFilter.All(mf => !fileName.Equals(mf, StringComparison.OrdinalIgnoreCase));
             }))
             {
-                assemblyContext.LoadFromAssemblyPath(Path.GetFullPath(dllFile));
+                Assembly.LoadFrom(Path.GetFullPath(dllFile));
             }
 
             IEnumerable<Type> moduleTypes = assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(BattleBitModule)));
@@ -57,18 +56,25 @@ namespace BattleBitAPIRunner
                 throw new Exception($"Module {Path.GetFileName(modulePath)} does not contain a class that inherits from {nameof(BattleBitModule)}");
             }
 
-            return new ModuleContext(assemblyContext, moduleTypes.First());
+            return new ModuleContext(new(Path.GetFileNameWithoutExtension(modulesCsprojFiles.First()), true), moduleTypes.First());
         }
 
         private static void compileProject(string csprojFilePath)
         {
-            Console.Write($"Compiling module {Path.GetFileNameWithoutExtension(csprojFilePath)}... ");
+            Console.WriteLine($"Compiling module {Path.GetFileNameWithoutExtension(csprojFilePath)}... ");
             Stopwatch stopwatch = Stopwatch.StartNew();
+
+            string targetDir = Path.Combine(Path.GetDirectoryName(csprojFilePath), PUBLISH_DIR);
+#if DEBUG
+            string targetConfiguration = "Debug";
+#else
+            string targetConfiguration = "Release";
+#endif
 
             var processInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"publish \"{csprojFilePath}\" -c Release -o \"{Path.Combine(Path.GetDirectoryName(csprojFilePath)!, PUBLISH_DIR)}\"",
+                Arguments = $"publish \"{csprojFilePath}\" -c {targetConfiguration} -o \"{targetDir}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -80,7 +86,7 @@ namespace BattleBitAPIRunner
                 process.StartInfo = processInfo;
                 process.Start();
 
-                _ = process.StandardOutput.ReadToEnd();
+                string output = process.StandardOutput.ReadToEnd();
                 string errors = process.StandardError.ReadToEnd();
 
                 process.WaitForExit();
@@ -88,11 +94,11 @@ namespace BattleBitAPIRunner
                 if (process.ExitCode != 0)
                 {
                     Console.WriteLine();
-                    throw new Exception($"Failed to compile module {Path.GetFileName(csprojFilePath)} (took {Math.Round(stopwatch.Elapsed.TotalSeconds, 1)}s). Errors:{Environment.NewLine}{errors}");
+                    throw new Exception($"Failed to compile module {Path.GetFileName(csprojFilePath)} (took {Math.Round(stopwatch.Elapsed.TotalSeconds, 1)}s). Output:{Environment.NewLine}{output}{Environment.NewLine}{errors}");
                 }
             }
 
-            Console.WriteLine($"Completed in {Math.Round(stopwatch.Elapsed.TotalSeconds, 1)}s");
+            Console.WriteLine($"Completed module {Path.GetFileNameWithoutExtension(csprojFilePath)} in {Math.Round(stopwatch.Elapsed.TotalSeconds, 1)}s");
         }
 
         public static void UnloadModule(ModuleContext moduleContext)
