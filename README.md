@@ -61,3 +61,8 @@ Use `this.Server.GetModule<DependantModule>()` to retrieve the module instance o
 ## Other modules
 
 - https://github.com/RainOrigami/BattleBitZombies - 28 days later inspired zombie pvp game mode module
+
+## Features to come
+- Per-module and per-server built-in configuration files
+- Optional module dependencies
+- You can suggest more over at the [Blood is Good Discord](https://discord.bloodisgood.org)
