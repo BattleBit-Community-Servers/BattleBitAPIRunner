@@ -56,7 +56,7 @@ Use `this.Server.GetModule<DependantModule>()` to retrieve the module instance o
 
 ## Base modules
 
-- https://github.com/RainOrigami/BattleBitBaseModules (PlayerFinder, PlayerPermissions, CommandHandler, PermissionsCommands, DiscordWebhooks)
+- https://github.com/RainOrigami/BattleBitBaseModules (MOTD, PlayerFinder, PlayerPermissions, CommandHandler, PermissionsCommands, DiscordWebhooks)
 
 ## Other modules
 
