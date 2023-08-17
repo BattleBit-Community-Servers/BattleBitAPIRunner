@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.Operations;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Text;
@@ -221,32 +222,43 @@ namespace BattleBitAPIRunner
 
             foreach (BattleBitModule battleBitModule in battleBitModules)
             {
-                try
+                // Resolve references
+                foreach (PropertyInfo property in battleBitModule.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
                 {
-                    // Resolve references
-                    foreach (PropertyInfo property in battleBitModule.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                    ModuleReferenceAttribute? moduleReference = property.GetCustomAttribute<ModuleReferenceAttribute>();
+                    if (moduleReference is null)
                     {
-                        ModuleReferenceAttribute? moduleReference = property.GetCustomAttribute<ModuleReferenceAttribute>();
-                        if (moduleReference is null)
-                        {
-                            continue;
-                        }
-
-                        BattleBitModule? referencedModule = battleBitModules.FirstOrDefault(m => m.GetType().Name == property.Name);
-                        if (referencedModule is null)
-                        {
-                            continue;
-                        }
-
-                        property.SetValue(battleBitModule, referencedModule);
+                        continue;
                     }
 
-                    // All references and modules are loaded
+                    BattleBitModule? referencedModule = battleBitModules.FirstOrDefault(m => m.GetType().Name == property.Name);
+                    if (referencedModule is null)
+                    {
+                        continue;
+                    }
+
+                    property.SetValue(battleBitModule, referencedModule);
+                }
+            }
+
+            foreach (BattleBitModule battleBitModule in battleBitModules)
+            {
+                Stopwatch stopwatch = new();
+                try
+                {
+                    stopwatch.Start();
                     battleBitModule.OnModulesLoaded();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.ToString());
+                    Console.WriteLine($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} threw an exception: {ex}");
+                }
+                stopwatch.Stop();
+
+                if (stopwatch.ElapsedMilliseconds > 250)
+                {
+                    // TODO: move this to a configurable field in ServerConfiguration
+                    Console.WriteLine($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} took {stopwatch.ElapsedMilliseconds}ms to execute.");
                 }
             }
 
