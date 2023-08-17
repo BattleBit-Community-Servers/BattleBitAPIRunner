@@ -5,10 +5,7 @@ Modular battlebit community server api runner. Lets you host community servers w
 ## Features
 
 - Start the community server API endpoint for your server to connect to
-- Dynamically load and unload modules
 - Modules are simple C# source files `.cs`
-- Modules are compiled in runtime, letting you change them ad-hoc
-- Supports debugging of modules (simply attach your debugger)
 - Modules support module dependencies
 - Modules support binary dependencies (Newtonsoft.Json, System.Net.Http, ...)
 
@@ -31,9 +28,12 @@ Modular battlebit community server api runner. Lets you host community servers w
 
 ## Usage
 
-Download the latest release, unpack, configure and start.
-You can then copy modules into your module directory and load them by typing `load ModuleName` into the console.
-Unload modules by typing `unload modulefilename`. Reload modules by typing `load modulefilename`.
+Download the latest release, unpack, configure and start `BattleBitAPIRunner`.
+A modules and dependencies folder will be created in the same directory as the executable, if you have not specified a different path in the configuration file.
+Modules are loaded upon startup. To reload modules the application has to be restarted.
+
+Place modules in the modules folder or specify their path in the configuration file.
+Place binary dependencies in the dependencies folder.
 
 ## Developing modules
 
