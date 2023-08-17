@@ -27,15 +27,15 @@ Configure the runner in the `appsettings.json`:
 - Port: Listening port
 - ModulePath: Path to the folder containing all modules (is created if not exist)
 - Modules: Array of individual module file paths
-- DependencyPath: Path to the folder containing all binary dependencies (dlls)
-- ConfigurationPath: Path to the folder containing all module and per-server module configuration files
+- DependencyPath: Path to the folder containing all binary (dll) dependencies (is created if not exist)
+- ConfigurationPath: Path to the folder containing all module and per-server module configuration files (is created if not exist)
 
 Module and per-server module configurations are located in the configurations subdirectory, if you have not changed the path.
 
 ## Usage
 
 Download the latest release, unpack, configure and start `BattleBitAPIRunner`.
-A modules and dependencies folder will be created in the same directory as the executable, if you have not specified a different path in the configuration file.
+The modules, dependencies and configurations folder will be created in the same directory as the executable, if you have not specified a different path in the configuration file.
 Modules are loaded upon startup. To reload modules the application has to be restarted.
 
 Place modules in the modules folder or specify their path in the configuration file.
@@ -43,7 +43,7 @@ Place binary dependencies in the dependencies folder.
 
 ## Developing modules
 
-Modules are .net 6.0 C# source code files. They are compiled in runtime, so you can change them ad-hoc.
+Modules are .net 6.0 C# source code files. They are compiled in runtime when the application starts.
 To debug a module, simply attach your debugger to the BattleBitAPIRunner process.
 
 To create a module, create a (library) .net 6.0 C# project.
@@ -53,12 +53,12 @@ In your module source file, have exactly one public class which has the same nam
 Your module class now has all methods of the BattleBit API, such as `OnConnected`.
 
 ### Optional module dependencies
-To optionally use specific modules, add a public property of type `BattleBitModule` to your module and add the `[ModuleModuleReference]` attribute to it. Make sure the name of the property is the name of the required module.
+To optionally use specific modules, add a public property of type `BattleBitModule` to your module and add the `[ModuleReference]` attribute to it. Make sure the name of the property is the name of the required module.
 ```cs
 [ModuleReference]
 public BattleBitModule? PlayerFinder { get; set; }
 ```
-When all modules are loaded (`OnModulesLoaded`) the module will be available on this property, if it was loaded.
+When all modules are loaded (`OnModulesLoaded`) the dependant module will be available on this property, if it was loaded.
 
 You can call methods on that module by using the `Call` method.
 
@@ -69,7 +69,7 @@ bool? result = this.PlayerFinder?.Call<bool>("TargetMethodWithReturnValue");
 ```
 
 ### Required module dependencies
-To require a dependency to another module, include the required module source file in your project (optional, only for syntax validation).
+To require a dependency to another module, include the required module source file in your project (optional, only for syntax validation and autocomplete).
 Add a `[RequireModule(typeof(YourModuleDependency))]` attribute to your module class. Multiple attributes for multiple required dependencies are supported.
 
 ```cs
