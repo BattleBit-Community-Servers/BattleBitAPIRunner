@@ -148,7 +148,7 @@ namespace BattleBitAPIRunner
                 {
                     try
                     {
-                        if (property.PropertyType != typeof(ModuleConfiguration))
+                        if (!property.PropertyType.IsAssignableTo(typeof(ModuleConfiguration)))
                         {
                             throw new Exception($"Configuration does not inherit from {nameof(ModuleConfiguration)}");
                         }
