@@ -28,6 +28,12 @@ namespace BBRAPIModules
             return (T)method.Invoke(this, parameters);
         }
 
+        protected void Unload()
+        {
+            this.Server.RemoveModule(this);
+            this.Server = null!;
+        }
+
         public virtual void OnModulesLoaded() { } // sighs silently
 
         #region GameServer.cs copy-paste
