@@ -73,133 +73,8 @@ namespace BattleBitAPIRunner
                             Console.WriteLine(module.Name);
                         }
                         break;
-                    case "unload":
-                    case "load":
-                        if (commandParts.Length < 2)
-                        {
-                            Console.WriteLine("Usage: load/unload <module name>");
-                            continue;
-                        }
-
-                        if (commandParts[0].Equals("load", StringComparison.OrdinalIgnoreCase))
-                        {
-                            tryLoadModuleFromName(commandParts[1]);
-                        }
-                        else
-                        {
-                            tryUnloadModuleFromName(commandParts[1]);
-                        }
-                        break;
                     default:
                         break;
-                }
-            }
-        }
-
-        private void tryUnloadModuleFromName(string name)
-        {
-            Module? module = Module.Modules.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-
-            if (module is null)
-            {
-                Console.WriteLine($"Module {name} not found");
-                return;
-            }
-
-            this.unloadModuleFromServers(module);
-            module.Unload();
-
-            Console.WriteLine($"Module {module.Name} unloaded.");
-        }
-
-        private void tryLoadModuleFromName(string name)
-        {
-            Module? module = Module.Modules.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-
-            if (module is not null)
-            {
-                unloadModuleFromServers(module);
-                module.Unload();
-            }
-
-            try
-            {
-                if (module is null)
-                {
-                    module = new Module(Path.Combine(this.configuration.ModulesPath, $"{name}.cs"));
-                }
-                else
-                {
-                    module.Reload();
-                }
-
-                foreach (string dependency in module.Dependencies)
-                {
-                    if (Module.Modules.FirstOrDefault(m => m.Name.Equals(dependency, StringComparison.OrdinalIgnoreCase)) is null)
-                    {
-                        throw new Exception($"Module {name} requires module {dependency} which is not loaded.");
-                    }
-                }
-
-                module.Compile();
-                module.Load();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load module {(module?.Name ?? name)}: {ex}");
-                return;
-            }
-
-            this.loadModuleToServers(module, true);
-
-            Console.WriteLine($"Module {module.Name} loaded.");
-        }
-
-        private void unloadModuleFromServers(Module module)
-        {
-            // TODO: requires unloading of dependant modules as well
-
-            foreach (RunnerServer server in this.servers)
-            {
-                BattleBitModule? moduleInstance = server.GetModule(module.ModuleType);
-                if (moduleInstance is null)
-                {
-                    continue;
-                }
-
-                server.RemoveModule(moduleInstance);
-            }
-        }
-
-        private void loadModuleToServers(Module module, bool immediateStart = false)
-        {
-            foreach (RunnerServer server in this.servers)
-            {
-                try
-                {
-                    BattleBitModule moduleInstance = Activator.CreateInstance(module.ModuleType, server) as BattleBitModule;
-                    if (moduleInstance is null)
-                    {
-                        // this can't really happen
-                        throw new Exception($"Module {module.Name} does not inherit from {nameof(BattleBitModule)}");
-                    }
-                    server.AddModule(moduleInstance);
-
-                    if (immediateStart)
-                    {
-                        Task.Run(async () =>
-                        {
-                            moduleInstance.OnModulesLoaded();
-                            if (server.IsConnected)
-                            {
-                                await moduleInstance.OnConnected();
-                            }
-                        });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Failed to load module {module.Context.Name} for server {server.GameIP}:{server.GamePort}: {ex}");
                 }
             }
         }
@@ -248,27 +123,34 @@ namespace BattleBitAPIRunner
 
             List<BattleBitModule> battleBitModules = new();
 
-            foreach (Module moduleContext in Module.Modules)
+            foreach (Module module in Module.Modules)
             {
                 try
                 {
-                    BattleBitModule module = Activator.CreateInstance(moduleContext.ModuleType, server) as BattleBitModule;
-                    if (module is null)
+                    BattleBitModule moduleInstance = Activator.CreateInstance(module.ModuleType, server) as BattleBitModule;
+                    if (moduleInstance is null)
                     {
-                        throw new Exception($"Module {moduleContext.Context.Name} does not inherit from {nameof(BattleBitModule)}");
+                        throw new Exception($"Module {module.Name} does not inherit from {nameof(BattleBitModule)}");
                     }
-                    ((RunnerServer)server).AddModule(module);
-                    battleBitModules.Add(module);
+                    ((RunnerServer)server).AddModule(moduleInstance);
+                    battleBitModules.Add(moduleInstance);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to load module {moduleContext.Context.Name}: {ex}");
+                    Console.WriteLine($"Failed to load module {module.Name}: {ex}");
                 }
             }
 
             foreach (BattleBitModule battleBitModule in battleBitModules)
             {
-                battleBitModule.OnModulesLoaded();
+                try
+                {
+                    battleBitModule.OnModulesLoaded();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
             }
 
             return Task.CompletedTask;

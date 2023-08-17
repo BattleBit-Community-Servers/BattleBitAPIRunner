@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace BattleBitAPIRunner
 {
@@ -17,6 +18,7 @@ namespace BattleBitAPIRunner
     {
         private static List<Module> modules = new();
         public static IReadOnlyList<Module> Modules => modules;
+        private static AssemblyLoadContext moduleContext = new AssemblyLoadContext("Modules", true);
 
         public AssemblyLoadContext? Context { get; private set; }
         public Type? ModuleType { get; private set; }
@@ -24,13 +26,25 @@ namespace BattleBitAPIRunner
         public string[]? Dependencies { get; private set; }
         public byte[]? AssemblyBytes { get; private set; }
         public string ModuleFilePath { get; }
+        public Assembly? ModuleAssembly { get; private set; }
 
         private SyntaxTree syntaxTree;
 
         public Module(string moduleFilePath)
         {
             this.ModuleFilePath = moduleFilePath;
-            this.Reload();
+            this.initialize();
+        }
+
+        private void initialize()
+        {
+            Console.WriteLine($"Parsing module from file {Path.GetFileName(this.ModuleFilePath)}");
+
+            this.syntaxTree = SyntaxFactory.ParseSyntaxTree(File.ReadAllText(this.ModuleFilePath));
+            this.Name = this.getName();
+            this.Dependencies = this.getDependencies();
+
+            Console.WriteLine($"Module {this.Name} has {this.Dependencies.Length} dependencies");
         }
 
         private string[] getDependencies()
@@ -66,11 +80,11 @@ namespace BattleBitAPIRunner
                 throw new Exception("Module has not been compiled yet");
             }
 
-            this.Context = new AssemblyLoadContext(this.Name, true);
-            Assembly assembly = this.Context.LoadFromStream(new MemoryStream(this.AssemblyBytes));
+            this.Context = Module.moduleContext;
+            this.ModuleAssembly = this.Context.LoadFromStream(new MemoryStream(this.AssemblyBytes));
 
             // TODO: may be redundant to the checks in getModuleName() (but better safe than sorry?)
-            IEnumerable<Type> moduleTypes = assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(BattleBitModule)));
+            IEnumerable<Type> moduleTypes = this.ModuleAssembly.GetTypes().Where(x => x.IsSubclassOf(typeof(BattleBitModule)));
             if (moduleTypes.Count() != 1)
             {
                 throw new Exception($"Module {this.Name} does not contain a class that inherits from {nameof(BattleBitModule)}");
@@ -107,35 +121,6 @@ namespace BattleBitAPIRunner
 
             memoryStream.Seek(0, SeekOrigin.Begin);
             this.AssemblyBytes = memoryStream.ToArray();
-        }
-
-        public void Unload()
-        {
-            Console.WriteLine($"Unloading module {this.Name}");
-            this.Context?.Unload();
-
-            modules.Remove(this);
-        }
-
-        public void Reload()
-        {
-            if (modules.Contains(this))
-            {
-                this.Unload();
-            }
-
-            foreach (Module module in modules.Where(x => x.Dependencies.Contains(this.Name)))
-            {
-                module.Unload();
-            }
-
-            Console.WriteLine($"Parsing module from file {Path.GetFileName(this.ModuleFilePath)}");
-
-            this.syntaxTree = SyntaxFactory.ParseSyntaxTree(File.ReadAllText(this.ModuleFilePath));
-            this.Name = this.getName();
-            this.Dependencies = this.getDependencies();
-
-            Console.WriteLine($"Module {this.Name} has {this.Dependencies.Length} dependencies");
         }
     }
 }
