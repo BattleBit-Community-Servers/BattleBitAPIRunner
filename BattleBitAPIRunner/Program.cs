@@ -161,7 +161,7 @@ namespace BattleBitAPIRunner
                             string filePath = Path.Combine(this.configuration.ConfigurationPath, module.Name, fileName);
                             if (property.GetMethod?.IsStatic != true)
                             {
-                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{server.GameIP}_{server.GamePort}", fileName);
+                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{server.GameIP}_{server.GamePort}", module.Name, fileName);
                             }
 
                             if (!Directory.Exists(Path.GetDirectoryName(filePath)))
@@ -193,7 +193,7 @@ namespace BattleBitAPIRunner
                             string filePath = Path.Combine(this.configuration.ConfigurationPath, module.Name, fileName);
                             if (property.GetMethod?.IsStatic != true)
                             {
-                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{server.GameIP}_{server.GamePort}", fileName);
+                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{server.GameIP}_{server.GamePort}", module.Name, fileName);
                             }
 
                             if (!Directory.Exists(Path.GetDirectoryName(filePath)))
