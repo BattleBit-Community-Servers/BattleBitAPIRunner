@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>BBRAPIModules</id>
-    <version>0.0.4</version>
+    <version>0.0.4.1</version>
     <title>BattleBit Remastered Modular Community Server API</title>
     <authors>RainOrigami</authors>
     <projectUrl>https://github.com/RainOrigami/BattleBitAPIRunner</projectUrl>
