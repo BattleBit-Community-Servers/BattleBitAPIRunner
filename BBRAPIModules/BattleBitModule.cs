@@ -12,6 +12,22 @@ namespace BBRAPIModules
             this.Server = server;
         }
 
+        public void Call(string methodName, params object?[]? parameters)
+        {
+            this.Call<object?>(methodName, parameters);
+        }
+
+        public T Call<T>(string methodName, params object?[]? parameters)
+        {
+            var method = this.GetType().GetMethod(methodName);
+            if (method == null)
+            {
+                return default(T);
+            }
+
+            return (T)method.Invoke(this, parameters);
+        }
+
         public virtual void OnModulesLoaded() { } // sighs silently
 
         #region GameServer.cs copy-paste

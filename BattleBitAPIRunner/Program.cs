@@ -2,6 +2,7 @@
 using BBRAPIModules;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Reflection;
@@ -125,12 +126,13 @@ namespace BattleBitAPIRunner
 
             foreach (Module module in Module.Modules)
             {
+                BattleBitModule moduleInstance;
                 try
                 {
-                    BattleBitModule moduleInstance = Activator.CreateInstance(module.ModuleType, server) as BattleBitModule;
+                    moduleInstance = Activator.CreateInstance(module.ModuleType, server) as BattleBitModule;
                     if (moduleInstance is null)
                     {
-                        throw new Exception($"Module {module.Name} does not inherit from {nameof(BattleBitModule)}");
+                        throw new Exception($"Not inheriting from {nameof(BattleBitModule)}");
                     }
                     ((RunnerServer)server).AddModule(moduleInstance);
                     battleBitModules.Add(moduleInstance);
@@ -138,6 +140,72 @@ namespace BattleBitAPIRunner
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Failed to load module {module.Name}: {ex}");
+                    continue;
+                }
+
+                // Module configurations
+                foreach (PropertyInfo property in module.ModuleType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly).Where(p => p.PropertyType.IsAssignableTo(typeof(ModuleConfiguration))))
+                {
+                    try
+                    {
+                        if (property.PropertyType != typeof(ModuleConfiguration))
+                        {
+                            throw new Exception($"Configuration does not inherit from {nameof(ModuleConfiguration)}");
+                        }
+
+                        ModuleConfiguration moduleConfiguration = Activator.CreateInstance(property.PropertyType) as ModuleConfiguration;
+                        moduleConfiguration.OnLoadingRequest += (s, e) =>
+                        {
+                            string fileName = $"{property.Name}.json";
+                            string filePath = Path.Combine(this.configuration.ConfigurationPath, fileName);
+                            if (property.GetMethod?.IsStatic != true)
+                            {
+                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{server.GameIP}_{server.GamePort}", fileName);
+                            }
+
+                            // Create instance of type of the property if it doesn't exist
+                            object? configurationValue = property.GetValue(moduleInstance);
+                            if (configurationValue is null)
+                            {
+                                configurationValue = Activator.CreateInstance(property.PropertyType);
+
+                                if (!File.Exists(filePath))
+                                {
+                                    File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
+                                }
+                            }
+
+                            if (File.Exists(filePath))
+                            {
+                                configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType);
+                                property.SetValue(moduleInstance, configurationValue);
+                            }
+                        };
+                        moduleConfiguration.OnSavingRequest += (s, e) =>
+                        {
+                            string fileName = $"{property.Name}.json";
+                            string filePath = Path.Combine(this.configuration.ConfigurationPath, fileName);
+                            if (property.GetMethod?.IsStatic != true)
+                            {
+                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{server.GameIP}_{server.GamePort}", fileName);
+                            }
+
+                            object? configurationValue = property.GetValue(moduleInstance);
+                            if (configurationValue is null)
+                            {
+                                return; // nothing to save
+                            }
+
+                            File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
+                        };
+
+                        moduleConfiguration.Load();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to load module {module.Name} configuration {property.Name}: {ex}");
+                        continue;
+                    }
                 }
             }
 
@@ -145,6 +213,25 @@ namespace BattleBitAPIRunner
             {
                 try
                 {
+                    // Resolve references
+                    foreach (PropertyInfo property in battleBitModule.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                    {
+                        ModuleReferenceAttribute? moduleReference = property.GetCustomAttribute<ModuleReferenceAttribute>();
+                        if (moduleReference is null)
+                        {
+                            continue;
+                        }
+
+                        BattleBitModule? referencedModule = battleBitModules.FirstOrDefault(m => m.GetType().Name == property.Name);
+                        if (referencedModule is null)
+                        {
+                            continue;
+                        }
+
+                        property.SetValue(battleBitModule, referencedModule);
+                    }
+
+                    // All references and modules are loaded
                     battleBitModule.OnModulesLoaded();
                 }
                 catch (Exception ex)

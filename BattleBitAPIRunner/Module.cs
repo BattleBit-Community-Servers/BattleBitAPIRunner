@@ -23,7 +23,8 @@ namespace BattleBitAPIRunner
         public AssemblyLoadContext? Context { get; private set; }
         public Type? ModuleType { get; private set; }
         public string? Name { get; private set; }
-        public string[]? Dependencies { get; private set; }
+        public string[]? RequiredDependencies { get; private set; }
+        public string[]? OptionalDependencies { get; private set; }
         public byte[]? AssemblyBytes { get; private set; }
         public string ModuleFilePath { get; }
         public Assembly? ModuleAssembly { get; private set; }
@@ -42,19 +43,23 @@ namespace BattleBitAPIRunner
 
             this.syntaxTree = SyntaxFactory.ParseSyntaxTree(File.ReadAllText(this.ModuleFilePath));
             this.Name = this.getName();
-            this.Dependencies = this.getDependencies();
+            this.getDependencies();
 
-            Console.WriteLine($"Module {this.Name} has {this.Dependencies.Length} dependencies");
+            Console.WriteLine($"Module {this.Name} has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
         }
 
-        private string[] getDependencies()
+        private void getDependencies()
         {
             IEnumerable<AttributeSyntax> attributeSyntaxes = syntaxTree.GetRoot().DescendantNodes().OfType<AttributeSyntax>();
             IEnumerable<AttributeSyntax> requireModuleAttributes = attributeSyntaxes.Where(x => x.Name.ToString() + "Attribute" == nameof(RequireModuleAttribute));
-            IEnumerable<AttributeSyntax> publicModuleAttributes = requireModuleAttributes.Where(x => x.Parent?.Parent is ClassDeclarationSyntax classDeclarationSyntax && classDeclarationSyntax.Modifiers.Any(x => x.ToString() == "public"));
-            IEnumerable<string> moduleTypes = publicModuleAttributes.Select(x => x.ArgumentList?.Arguments.FirstOrDefault()?.Expression.ToString().Trim('"')[6..].Trim('(', ')').Split('.').Last()).Where(x => !string.IsNullOrWhiteSpace(x));
+            IEnumerable<AttributeSyntax> publicRequireModuleAttributes = requireModuleAttributes.Where(x => x.Parent?.Parent is ClassDeclarationSyntax classDeclarationSyntax && classDeclarationSyntax.Modifiers.Any(x => x.ToString() == "public"));
+            IEnumerable<string> requiredModuleTypes = publicRequireModuleAttributes.Select(x => x.ArgumentList?.Arguments.FirstOrDefault()?.Expression.ToString().Trim('"')[6..].Trim('(', ')').Split('.').Last()).Where(x => !string.IsNullOrWhiteSpace(x));
+            IEnumerable<AttributeSyntax> moduleReferenceAttributes = attributeSyntaxes.Where(x => x.Name.ToString() + "Attribute" == nameof(ModuleReferenceAttribute));
+            IEnumerable<AttributeSyntax> publicModuleReferenceAttribute = moduleReferenceAttributes.Where(x => x.Parent?.Parent is PropertyDeclarationSyntax propertyDeclarationSyntax && propertyDeclarationSyntax.Modifiers.Any(x => x.ToString() == "public"));
+            IEnumerable<string> optionalModuleTypes = publicModuleReferenceAttribute.Select(x => x.ArgumentList?.Arguments.FirstOrDefault()?.Expression.ToString().Trim('"')[6..].Trim('(', ')').Split('.').Last()).Where(x => !string.IsNullOrWhiteSpace(x));
 
-            return moduleTypes.ToArray();
+            this.RequiredDependencies = requiredModuleTypes.ToArray();
+            this.OptionalDependencies = optionalModuleTypes.ToArray();
         }
 
         private string getName()

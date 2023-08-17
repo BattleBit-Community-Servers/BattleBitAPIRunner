@@ -16,7 +16,7 @@ namespace BattleBitAPIRunner
             foreach (Module moduleLoader in moduleLoaders)
             {
                 this.moduleLoaders.Add(moduleLoader.Name, moduleLoader);
-                this.dependencyGraph.Add(moduleLoader.Name, moduleLoader.Dependencies);
+                this.dependencyGraph.Add(moduleLoader.Name, moduleLoader.RequiredDependencies.Union(moduleLoader.OptionalDependencies).ToArray());
             }
         }
 
