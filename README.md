@@ -7,17 +7,20 @@ Modular battlebit community server api runner. Lets you host community servers w
 - Start the community server API endpoint for your server to connect to
 - Modules are simple C# source files `.cs`
 - Modules support module dependencies
+- Modules support optional module dependencies
 - Modules support binary dependencies (Newtonsoft.Json, System.Net.Http, ...)
+- Integrated Per-module and per-server configuration files
 
 ## Configuration
-
+Configure the runner in the `appsettings.json`:
 ```
 {
   "IP": "127.0.0.1",
   "Port": 29595,
   "ModulePath": "./modules",
   "Modules": [ "C:\\path\\to\\specific\\ModuleFile.cs" ],
-  "DependencyPath": "./dependencies"
+  "DependencyPath": "./dependencies",
+  "ConfigurationPath": "./configurations"
 }
 ```
 - IP: Listening IP
@@ -25,6 +28,9 @@ Modular battlebit community server api runner. Lets you host community servers w
 - ModulePath: Path to the folder containing all modules (is created if not exist)
 - Modules: Array of individual module file paths
 - DependencyPath: Path to the folder containing all binary dependencies (dlls)
+- ConfigurationPath: Path to the folder containing all module and per-server module configuration files
+
+Module and per-server module configurations are located in the configurations subdirectory, if you have not changed the path.
 
 ## Usage
 
@@ -46,23 +52,64 @@ Add a nuget dependency to [BBRAPIModules](https://www.nuget.org/packages/BBRAPIM
 In your module source file, have exactly one public class which has the same name as your file and inherit `BBRAPIModules.BattleBitModule`.
 Your module class now has all methods of the BattleBit API, such as `OnConnected`.
 
-To use module dependencies, for each dependent module, add the module source file to your project and add a `[RequireModule(typeof(DependantModule))]` attribute to your class.
-You can assign all your dependant modules to fields in the `OnModulesLoaded` method which gets called once all modules are available.
-Use `this.Server.GetModule<DependantModule>()` to retrieve the module instance of the server.
+### Optional module dependencies
+To optionally use specific modules, add a public property of type `BattleBitModule` to your module and add the `[ModuleModuleReference]` attribute to it. Make sure the name of the property is the name of the required module.
+```cs
+[ModuleReference]
+public BattleBitModule? PlayerFinder { get; set; }
+```
+When all modules are loaded (`OnModulesLoaded`) the module will be available on this property, if it was loaded.
 
-### Example modules
+You can call methods on that module by using the `Call` method.
 
+```cs
+this.PlayerFinder?.Call("TargetMethod");
+this.PlayerFinder?.Call("TargetMethodWithParams", "param1", 2, 3);
+bool? result = this.PlayerFinder?.Call<bool>("TargetMethodWithReturnValue");
+```
+
+### Required module dependencies
+To require a dependency to another module, include the required module source file in your project (optional, only for syntax validation).
+Add a `[RequireModule(typeof(YourModuleDependency))]` attribute to your module class. Multiple attributes for multiple required dependencies are supported.
+
+```cs
+[RequireModule(typeof(PlayerPermissions))]
+[RequireModule(typeof(CommandHandler))]
+public class MyModule : BattleBitModule
+```
+
+You will also have to add the module properties to your class as you would do with optional module dependencies, except they will be guaranteed to not be null after `OnModulesLoaded`.
+
+### Module Configuration
+Create a class containing public properties of all your configuration variables and inherit from `ModuleConfiguration`.
+Add a public property of your configuration class to your module.
+If the property is static it will be a global configuration shared by all instances of your module across all servers.
+If the property is not static, it will be a per-server configuration.
+You can have multiple configurations, static and non-static, per module.
+The configuration file will be called like the property name.
+
+```cs
+public class MyModuleConfiguration : ModuleConfiguration
+{
+    public string SomeConfigurationValue { get; set; } = string.Empty;
+}
+public class MyModule : BattleBitModule
+{
+    public MyModuleConfiguration GlobalConfig { get; set; }
+    public MyModuleConfiguration PerServerConfig { get; set; }
+}
+```
+This will create a `./configurations/MyModule/GlobalConfig.json` and a `./configurations/127.0.0.1_29595/MyModule/PerServerConfig.json` (for each server) configuration file.
+
+# Modules
+## Example modules
 - https://github.com/RainOrigami/BattleBitExamples
 
 ## Base modules
-
 - https://github.com/RainOrigami/BattleBitBaseModules - A collection of basic modules to get you started (MOTD, PlayerFinder, PlayerPermissions, CommandHandler, PermissionsCommands, DiscordWebhooks)
 
 ## Other modules
-
 - https://github.com/RainOrigami/BattleBitZombies - 28 days later inspired zombie pvp game mode module
 
-## Features to come
-- Per-module and per-server built-in configuration files
-- Optional module dependencies
-- You can suggest more over at the [Blood is Good Discord](https://discord.bloodisgood.org)
+# Features to come
+- You can suggest some over at the [Blood is Good Discord](https://discord.bloodisgood.org)
