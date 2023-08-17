@@ -59,7 +59,7 @@ namespace BattleBitAPIRunner
             IEnumerable<string> optionalModuleTypes = publicModuleReferenceAttributes.Select(x => (x.Parent?.Parent as PropertyDeclarationSyntax).Identifier.ValueText);
 
             this.RequiredDependencies = requiredModuleTypes.ToArray();
-            this.OptionalDependencies = optionalModuleTypes.ToArray();
+            this.OptionalDependencies = optionalModuleTypes.Where(m => !this.RequiredDependencies.Contains(m)).ToArray();
         }
 
         private string getName()
