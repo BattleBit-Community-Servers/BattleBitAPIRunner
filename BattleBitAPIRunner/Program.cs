@@ -157,10 +157,15 @@ namespace BattleBitAPIRunner
                         moduleConfiguration.OnLoadingRequest += (s, e) =>
                         {
                             string fileName = $"{property.Name}.json";
-                            string filePath = Path.Combine(this.configuration.ConfigurationPath, fileName);
+                            string filePath = Path.Combine(this.configuration.ConfigurationPath, module.Name, fileName);
                             if (property.GetMethod?.IsStatic != true)
                             {
                                 filePath = Path.Combine(this.configuration.ConfigurationPath, $"{server.GameIP}_{server.GamePort}", fileName);
+                            }
+
+                            if (!Directory.Exists(Path.GetDirectoryName(filePath)))
+                            {
+                                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
                             }
 
                             // Create instance of type of the property if it doesn't exist
@@ -184,10 +189,15 @@ namespace BattleBitAPIRunner
                         moduleConfiguration.OnSavingRequest += (s, e) =>
                         {
                             string fileName = $"{property.Name}.json";
-                            string filePath = Path.Combine(this.configuration.ConfigurationPath, fileName);
+                            string filePath = Path.Combine(this.configuration.ConfigurationPath, module.Name, fileName);
                             if (property.GetMethod?.IsStatic != true)
                             {
                                 filePath = Path.Combine(this.configuration.ConfigurationPath, $"{server.GameIP}_{server.GamePort}", fileName);
+                            }
+
+                            if (!Directory.Exists(Path.GetDirectoryName(filePath)))
+                            {
+                                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
                             }
 
                             object? configurationValue = property.GetValue(moduleInstance);
