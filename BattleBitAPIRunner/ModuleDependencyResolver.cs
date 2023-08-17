@@ -18,6 +18,17 @@ namespace BattleBitAPIRunner
                 this.moduleLoaders.Add(moduleLoader.Name, moduleLoader);
                 this.dependencyGraph.Add(moduleLoader.Name, moduleLoader.RequiredDependencies.Union(moduleLoader.OptionalDependencies).ToArray());
             }
+
+            foreach (Module moduleLoader in moduleLoaders)
+            {
+                foreach (string dependency in moduleLoader.OptionalDependencies)
+                {
+                    if (!this.dependencyGraph.ContainsKey(dependency))
+                    {
+                        this.dependencyGraph.Add(dependency, Array.Empty<string>());
+                    }
+                }
+            }
         }
 
         public IEnumerable<Module> GetDependencyOrder()
@@ -30,7 +41,7 @@ namespace BattleBitAPIRunner
                 VisitModule(module, visited, order);
             }
 
-            return order.Select(o => this.moduleLoaders[o]);
+            return order.Where(o => this.moduleLoaders.ContainsKey(o)).Select(o => this.moduleLoaders[o]);
         }
 
         private void VisitModule(string module, HashSet<string> visited, List<string> order)
