@@ -121,7 +121,8 @@ namespace BattleBitAPIRunner
 
         private Task initializeGameServer(GameServer<RunnerPlayer> server)
         {
-            this.servers.Add((RunnerServer)server);
+            RunnerServer runnerServer = (RunnerServer)server;
+            this.servers.Add(runnerServer);
 
             List<BattleBitModule> battleBitModules = new();
 
@@ -130,12 +131,13 @@ namespace BattleBitAPIRunner
                 BattleBitModule moduleInstance;
                 try
                 {
-                    moduleInstance = Activator.CreateInstance(module.ModuleType, server) as BattleBitModule;
+                    moduleInstance = Activator.CreateInstance(module.ModuleType) as BattleBitModule;
                     if (moduleInstance is null)
                     {
                         throw new Exception($"Not inheriting from {nameof(BattleBitModule)}");
                     }
-                    ((RunnerServer)server).AddModule(moduleInstance);
+                    moduleInstance.SetServer(runnerServer);
+                    runnerServer.AddModule(moduleInstance);
                     battleBitModules.Add(moduleInstance);
                 }
                 catch (Exception ex)

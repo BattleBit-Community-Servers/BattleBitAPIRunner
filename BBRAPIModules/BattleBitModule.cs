@@ -1,13 +1,15 @@
 ﻿using BattleBitAPI.Common;
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("BattleBitAPIRunner")]
+
 namespace BBRAPIModules
 {
     public abstract class BattleBitModule
     {
         protected RunnerServer Server { get; private set; }
 
-        public BattleBitModule(RunnerServer server)
+        internal void SetServer(RunnerServer server)
         {
             this.Server = server;
         }
