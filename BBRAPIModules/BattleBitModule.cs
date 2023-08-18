@@ -1,4 +1,5 @@
 ﻿using BattleBitAPI.Common;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("BattleBitAPIRunner")]
@@ -27,7 +28,26 @@ namespace BBRAPIModules
                 return default(T);
             }
 
-            return (T)method.Invoke(this, parameters);
+            ParameterInfo[] methodParameters = method.GetParameters();
+
+            List<object?> fullParameters = new(parameters ?? new object?[] { });
+
+            if (methodParameters.Length > 0 && methodParameters.Length != parameters?.Length)
+            {
+                for (int i = parameters?.Length ?? 0; i < methodParameters.Length; i++)
+                {
+                    if (methodParameters[i].IsOptional || methodParameters[i].HasDefaultValue)
+                    {
+                        fullParameters.Add(methodParameters[i].DefaultValue);
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"Parameter {methodParameters[i].Name} is not optional and does not have a default value.");
+                    }
+                }
+            }
+
+            return (T)method.Invoke(this, fullParameters.ToArray());
         }
 
         protected void Unload()
