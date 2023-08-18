@@ -118,11 +118,10 @@ namespace BattleBitAPIRunner
         {
             this.serverListener.OnCreatingGameServerInstance = initializeGameServer;
         }
-
-        private Task initializeGameServer(GameServer<RunnerPlayer> server)
+        private RunnerServer initializeGameServer(IPAddress ip, int port)
         {
-            RunnerServer runnerServer = (RunnerServer)server;
-            this.servers.Add(runnerServer);
+            RunnerServer server = new RunnerServer();
+            this.servers.Add(server);
 
             List<BattleBitModule> battleBitModules = new();
 
@@ -136,8 +135,8 @@ namespace BattleBitAPIRunner
                     {
                         throw new Exception($"Not inheriting from {nameof(BattleBitModule)}");
                     }
-                    moduleInstance.SetServer(runnerServer);
-                    runnerServer.AddModule(moduleInstance);
+                    moduleInstance.SetServer(server);
+                    server.AddModule(moduleInstance);
                     battleBitModules.Add(moduleInstance);
                 }
                 catch (Exception ex)
@@ -163,7 +162,7 @@ namespace BattleBitAPIRunner
                             string filePath = Path.Combine(this.configuration.ConfigurationPath, module.Name, fileName);
                             if (property.GetMethod?.IsStatic != true)
                             {
-                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{server.GameIP}_{server.GamePort}", module.Name, fileName);
+                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{ip}_{port}", module.Name, fileName);
                             }
 
                             if (!Directory.Exists(Path.GetDirectoryName(filePath)))
@@ -195,7 +194,7 @@ namespace BattleBitAPIRunner
                             string filePath = Path.Combine(this.configuration.ConfigurationPath, module.Name, fileName);
                             if (property.GetMethod?.IsStatic != true)
                             {
-                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{server.GameIP}_{server.GamePort}", module.Name, fileName);
+                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{ip}_{port}", module.Name, fileName);
                             }
 
                             if (!Directory.Exists(Path.GetDirectoryName(filePath)))
@@ -264,7 +263,7 @@ namespace BattleBitAPIRunner
                 }
             }
 
-            return Task.CompletedTask;
+            return server;
         }
 
         private void startServerListener()
