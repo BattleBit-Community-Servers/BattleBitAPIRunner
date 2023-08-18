@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using System.Text;
 using System.Threading.Tasks;
@@ -121,6 +122,8 @@ namespace BattleBitAPIRunner
                     refs.Add(MetadataReference.CreateFromStream(assemblyStream));
                 }
             }
+            refs.Add(MetadataReference.CreateFromFile(typeof(DynamicAttribute).Assembly.Location));
+            refs.Add(MetadataReference.CreateFromFile(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException).Assembly.Location));
 
             CSharpCompilation compilation = CSharpCompilation.Create(this.Name)
                 .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
