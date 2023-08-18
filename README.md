@@ -53,19 +53,26 @@ In your module source file, have exactly one public class which has the same nam
 Your module class now has all methods of the BattleBit API, such as `OnConnected`.
 
 ### Optional module dependencies
-To optionally use specific modules, add a public property of type `BattleBitModule` to your module and add the `[ModuleReference]` attribute to it. Make sure the name of the property is the name of the required module.
+To optionally use specific modules, add a public property of type `BattleBitModule` or `dynamic` to your module and add the `[ModuleReference]` attribute to it. Make sure the name of the property is the name of the required module.
 ```cs
 [ModuleReference]
 public BattleBitModule? PlayerFinder { get; set; }
+// or using dynamic
+[ModuleReference]
+public dynamic? RichText { get; set; }
 ```
 When all modules are loaded (`OnModulesLoaded`) the dependant module will be available on this property, if it was loaded.
 
-You can call methods on that module by using the `Call` method.
+You can call methods on that module by using the `Call` method or by invoking the method dynamically.
 
 ```cs
 this.PlayerFinder?.Call("TargetMethod");
 this.PlayerFinder?.Call("TargetMethodWithParams", "param1", 2, 3);
 bool? result = this.PlayerFinder?.Call<bool>("TargetMethodWithReturnValue");
+// or using dynamic
+this.RichText?.TargetMethod();
+this.RichText?.TargetMethodWithParams("param1", 2, 3);
+bool? result = this.RichText?.TargetMethodWithReturnValue();
 ```
 
 ### Required module dependencies
