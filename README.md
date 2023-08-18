@@ -119,4 +119,5 @@ This will create a `./configurations/MyModule/GlobalConfig.json` and a `./config
 - https://github.com/RainOrigami/BattleBitZombies - 28 days later inspired zombie pvp game mode module
 
 # Features to come
+- Dynamic loading and unloading of modules without the need to restart
 - You can suggest some over at the [Blood is Good Discord](https://discord.bloodisgood.org)
