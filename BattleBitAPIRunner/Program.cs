@@ -156,61 +156,9 @@ namespace BattleBitAPIRunner
                         }
 
                         ModuleConfiguration moduleConfiguration = Activator.CreateInstance(property.PropertyType) as ModuleConfiguration;
-                        moduleConfiguration.OnLoadingRequest += (s, e) =>
-                        {
-                            string fileName = $"{property.Name}.json";
-                            string filePath = Path.Combine(this.configuration.ConfigurationPath, module.Name, fileName);
-                            if (property.GetMethod?.IsStatic != true)
-                            {
-                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{ip}_{port}", module.Name, fileName);
-                            }
-
-                            if (!Directory.Exists(Path.GetDirectoryName(filePath)))
-                            {
-                                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-                            }
-
-                            // Create instance of type of the property if it doesn't exist
-                            object? configurationValue = property.GetValue(moduleInstance);
-                            if (configurationValue is null)
-                            {
-                                configurationValue = Activator.CreateInstance(property.PropertyType);
-
-                                if (!File.Exists(filePath))
-                                {
-                                    File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
-                                }
-                            }
-
-                            if (File.Exists(filePath))
-                            {
-                                configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType);
-                                property.SetValue(moduleInstance, configurationValue);
-                            }
-                        };
-                        moduleConfiguration.OnSavingRequest += (s, e) =>
-                        {
-                            string fileName = $"{property.Name}.json";
-                            string filePath = Path.Combine(this.configuration.ConfigurationPath, module.Name, fileName);
-                            if (property.GetMethod?.IsStatic != true)
-                            {
-                                filePath = Path.Combine(this.configuration.ConfigurationPath, $"{ip}_{port}", module.Name, fileName);
-                            }
-
-                            if (!Directory.Exists(Path.GetDirectoryName(filePath)))
-                            {
-                                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-                            }
-
-                            object? configurationValue = property.GetValue(moduleInstance);
-                            if (configurationValue is null)
-                            {
-                                return; // nothing to save
-                            }
-
-                            File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
-                        };
-
+                        moduleConfiguration.Initialize(moduleInstance, property, $"{ip}_{port}");
+                        moduleConfiguration.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
+                        moduleConfiguration.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
                         moduleConfiguration.Load();
                     }
                     catch (Exception ex)
@@ -264,6 +212,68 @@ namespace BattleBitAPIRunner
             }
 
             return server;
+        }
+
+        private void ModuleConfiguration_OnSavingRequest(object? sender, BattleBitModule module, PropertyInfo property, string serverName)
+        {
+            string fileName = $"{property.Name}.json";
+            string filePath = Path.Combine(this.configuration.ConfigurationPath, module.GetType().Name, fileName);
+            if (property.GetMethod?.IsStatic != true)
+            {
+                filePath = Path.Combine(this.configuration.ConfigurationPath, serverName, module.GetType().Name, fileName);
+            }
+
+            if (!Directory.Exists(Path.GetDirectoryName(filePath)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+            }
+
+            object? configurationValue = property.GetValue(module);
+            if (configurationValue is null)
+            {
+                return; // nothing to save
+            }
+
+            File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
+        }
+
+        private void ModuleConfiguration_OnLoadingRequest(object? sender, BattleBitModule module, PropertyInfo property, string serverName)
+        {
+            string fileName = $"{property.Name}.json";
+            string filePath = Path.Combine(this.configuration.ConfigurationPath, module.GetType().Name, fileName);
+            if (property.GetMethod?.IsStatic != true)
+            {
+                filePath = Path.Combine(this.configuration.ConfigurationPath, serverName, module.GetType().Name, fileName);
+            }
+
+            if (!Directory.Exists(Path.GetDirectoryName(filePath)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+            }
+
+            // Create instance of type of the property if it doesn't exist
+            ModuleConfiguration? configurationValue = property.GetValue(module) as ModuleConfiguration;
+            if (configurationValue is null)
+            {
+                configurationValue = Activator.CreateInstance(property.PropertyType) as ModuleConfiguration;
+                configurationValue!.Initialize(module, property, serverName);
+                configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
+                configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
+
+                if (!File.Exists(filePath))
+                {
+                    File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
+                }
+            }
+
+            if (File.Exists(filePath))
+            {
+                configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType) as ModuleConfiguration;
+                configurationValue.Initialize(module, property, serverName);
+                configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
+                configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
+                property.SetValue(module, configurationValue);
+            }
         }
 
         private void startServerListener()
