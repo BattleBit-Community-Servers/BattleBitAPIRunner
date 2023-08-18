@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,11 +26,13 @@ namespace BattleBitAPIRunner
         public string? Name { get; private set; }
         public string[]? RequiredDependencies { get; private set; }
         public string[]? OptionalDependencies { get; private set; }
-        public byte[]? AssemblyBytes { get; private set; }
+        public byte[] AssemblyBytes { get; private set; }
+        public byte[] PDBBytes { get; private set; }
         public string ModuleFilePath { get; }
         public Assembly? ModuleAssembly { get; private set; }
 
         private SyntaxTree syntaxTree;
+        private string code;
 
         public Module(string moduleFilePath)
         {
@@ -41,7 +44,8 @@ namespace BattleBitAPIRunner
         {
             Console.WriteLine($"Parsing module from file {Path.GetFileName(this.ModuleFilePath)}");
 
-            this.syntaxTree = SyntaxFactory.ParseSyntaxTree(File.ReadAllText(this.ModuleFilePath));
+            this.code = File.ReadAllText(this.ModuleFilePath);
+            this.syntaxTree = CSharpSyntaxTree.ParseText(code, null, this.ModuleFilePath, Encoding.UTF8);
             this.Name = this.getName();
             this.getDependencies();
 
@@ -86,7 +90,12 @@ namespace BattleBitAPIRunner
             }
 
             this.Context = Module.moduleContext;
-            this.ModuleAssembly = this.Context.LoadFromStream(new MemoryStream(this.AssemblyBytes));
+
+            using (MemoryStream assemblyStream = new(this.AssemblyBytes))
+            using (MemoryStream pdbStream = new(this.PDBBytes))
+            {
+                this.ModuleAssembly = this.Context.LoadFromStream(assemblyStream, pdbStream);
+            }
 
             // TODO: may be redundant to the checks in getModuleName() (but better safe than sorry?)
             IEnumerable<Type> moduleTypes = this.ModuleAssembly.GetTypes().Where(x => x.IsSubclassOf(typeof(BattleBitModule)));
@@ -104,28 +113,43 @@ namespace BattleBitAPIRunner
         {
             Console.WriteLine($"Compiling module {this.Name}");
 
-            List<PortableExecutableReference> refs = AppDomain.CurrentDomain.GetAssemblies().Where(a => !string.IsNullOrWhiteSpace(a.Location)).Select(a => MetadataReference.CreateFromFile(a.Location)).Union(modules.Select(m => MetadataReference.CreateFromStream(new MemoryStream(m.AssemblyBytes)))).ToList();
+            List<PortableExecutableReference> refs = new(AppDomain.CurrentDomain.GetAssemblies().Where(a => !string.IsNullOrWhiteSpace(a.Location)).Select(a => MetadataReference.CreateFromFile(a.Location)));
+            foreach (Module module in modules)
+            {
+                using (MemoryStream assemblyStream = new(module.AssemblyBytes))
+                {
+                    refs.Add(MetadataReference.CreateFromStream(assemblyStream));
+                }
+            }
 
             CSharpCompilation compilation = CSharpCompilation.Create(this.Name)
-                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+                    .WithOptimizationLevel(OptimizationLevel.Debug)
+                    .WithPlatform(Platform.AnyCpu))
                 .WithReferences(refs)
                 .AddSyntaxTrees(this.syntaxTree);
 
-            using var memoryStream = new MemoryStream();
-            EmitResult result = compilation.Emit(memoryStream);
-
-            if (!result.Success)
+            using (MemoryStream assemblyStream = new())
+            using (MemoryStream pdbStream = new())
             {
-                var errors = result.Diagnostics
-                    .Where(diagnostic => diagnostic.IsWarningAsError || diagnostic.Severity == DiagnosticSeverity.Error)
-                    .Select(diagnostic => $"{diagnostic.Id}: {diagnostic.GetMessage()}")
-                    .ToList();
+                EmitResult result = compilation.Emit(assemblyStream, pdbStream, embeddedTexts: new[] { EmbeddedText.FromSource(this.ModuleFilePath, SourceText.From(code, Encoding.UTF8)) }, options: new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb));
 
-                throw new Exception(string.Join(Environment.NewLine, errors));
+                if (!result.Success)
+                {
+                    var errors = result.Diagnostics
+                        .Where(diagnostic => diagnostic.IsWarningAsError || diagnostic.Severity == DiagnosticSeverity.Error)
+                        .Select(diagnostic => $"{diagnostic.Id}: {diagnostic.GetMessage()}")
+                        .ToList();
+
+                    throw new Exception(string.Join(Environment.NewLine, errors));
+                }
+
+                assemblyStream.Seek(0, SeekOrigin.Begin);
+                this.AssemblyBytes = assemblyStream.ToArray();
+
+                pdbStream.Seek(0, SeekOrigin.Begin);
+                this.PDBBytes = pdbStream.ToArray();
             }
-
-            memoryStream.Seek(0, SeekOrigin.Begin);
-            this.AssemblyBytes = memoryStream.ToArray();
         }
     }
 }
