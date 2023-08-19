@@ -34,7 +34,7 @@ Module and per-server module configurations are located in the configurations su
 
 ## Usage
 
-Download the latest release, unpack, configure and start `BattleBitAPIRunner`.
+Download the [latest release](https://github.com/RainOrigami/BattleBitAPIRunner/releases), unpack, configure and start `BattleBitAPIRunner`.
 The modules, dependencies and configurations folder will be created in the same directory as the executable, if you have not specified a different path in the configuration file.
 Modules are loaded upon startup. To reload modules the application has to be restarted.
 
