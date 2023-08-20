@@ -71,17 +71,33 @@ namespace BBRAPIModules
             return result;
         }
 
-        private async Task<OnPlayerSpawnArguments> invokeOnModulesWithPlayerSpawnArgumentsReturnValue(string method, params object?[] parameters)
+        private async Task<OnPlayerSpawnArguments?> invokeOnModulesWithPlayerSpawnArgumentsReturnValue(string method, RunnerPlayer player, OnPlayerSpawnArguments request)
         {
             Stopwatch stopwatch = new();
-            OnPlayerSpawnArguments result = default;
+            OnPlayerSpawnArguments? result = request;
+            OnPlayerSpawnArguments previousValidSpawnArguments = request;
 
             foreach (BattleBitModule module in this.modules)
             {
                 try
                 {
                     stopwatch.Start();
-                    result = await (Task<OnPlayerSpawnArguments>)typeof(BattleBitModule).GetMethod(method).Invoke(module, parameters);
+                    OnPlayerSpawnArguments? moduleResult = await (Task<OnPlayerSpawnArguments?>)typeof(BattleBitModule).GetMethod(method).Invoke(module, new object?[] { player, previousValidSpawnArguments });
+
+                    if (moduleResult is not null)
+                    {
+                        previousValidSpawnArguments = moduleResult.Value;
+                    }
+
+                    // Once any module has declined the spawn request, no more spawn requests can be made
+                    if (moduleResult is not null && result is not null)
+                    {
+                        result = moduleResult;
+                    }
+                    else
+                    {
+                        result = null;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -171,11 +187,11 @@ namespace BBRAPIModules
         {
             await this.invokeOnModules(nameof(OnPlayerChangedRole), player, role);
         }
-        public override async Task OnPlayerJoinedSquad(RunnerPlayer player, Squads squad)
+        public override async Task OnPlayerJoinedSquad(RunnerPlayer player, Squad<RunnerPlayer> squad)
         {
             await this.invokeOnModules(nameof(OnPlayerJoinedSquad), player, squad);
         }
-        public override async Task OnPlayerLeftSquad(RunnerPlayer player, Squads squad)
+        public override async Task OnPlayerLeftSquad(RunnerPlayer player, Squad<RunnerPlayer> squad)
         {
             await this.invokeOnModules(nameof(OnPlayerLeftSquad), player, squad);
         }
@@ -183,9 +199,9 @@ namespace BBRAPIModules
         {
             await this.invokeOnModules(nameof(OnPlayerChangeTeam), player, team);
         }
-        public override async Task<OnPlayerSpawnArguments> OnPlayerSpawning(RunnerPlayer player, OnPlayerSpawnArguments request)
+        public override async Task<OnPlayerSpawnArguments?> OnPlayerSpawning(RunnerPlayer player, OnPlayerSpawnArguments request)
         {
-            return (OnPlayerSpawnArguments)await this.invokeOnModulesWithPlayerSpawnArgumentsReturnValue(nameof(OnPlayerSpawning), player, request);
+            return (OnPlayerSpawnArguments?)await this.invokeOnModulesWithPlayerSpawnArgumentsReturnValue(nameof(OnPlayerSpawning), player, request);
         }
         public override async Task OnPlayerSpawned(RunnerPlayer player)
         {
@@ -219,10 +235,13 @@ namespace BBRAPIModules
         {
             await this.invokeOnModules(nameof(OnRoundStarted));
         }
-
         public override async Task OnRoundEnded()
         {
             await this.invokeOnModules(nameof(OnRoundEnded));
+        }
+        public override async Task OnSquadPointsChanged(Squad<RunnerPlayer> squad, int newPoints)
+        {
+            await this.invokeOnModules(nameof(OnSquadPointsChanged), squad, newPoints);
         }
     }
 }

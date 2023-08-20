@@ -118,7 +118,7 @@ namespace BattleBitAPIRunner
         {
             this.serverListener.OnCreatingGameServerInstance = initializeGameServer;
         }
-        private RunnerServer initializeGameServer(IPAddress ip, int port)
+        private RunnerServer initializeGameServer(IPAddress ip, ushort port)
         {
             RunnerServer server = new RunnerServer();
             this.servers.Add(server);

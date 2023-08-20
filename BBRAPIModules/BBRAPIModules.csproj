@@ -5,11 +5,38 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-		<NuspecFile>BBRAPIModules.nuspec</NuspecFile>
+		<Title>BattleBit Remastered Modular Community Server API</Title>
+		<AssemblyVersion>0.4.4</AssemblyVersion>
+		<FileVersion>$(AssemblyVersion)</FileVersion>
+		<Version>$(AssemblyVersion)</Version>
+		<Authors>RainOrigami</Authors>
+		<Company>CodeFreak.net</Company>
+		<Description>Modularize your BattleBit Remastered Community Server API</Description>
+		<PackageProjectUrl>https://github.com/RainOrigami/BattleBitAPIRunner</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/RainOrigami/BattleBitAPIRunner</RepositoryUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>battlebit, battle bit, remastered, community server, api, modules, modular</PackageTags>
+		<PackageIcon>bb api runner icon.png</PackageIcon>
+		<PackageReleaseNotes>- Updated to latest API</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\BattleBit-Community-Server-API\CommunityServerAPI.csproj" />
+	  <None Include="..\README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="CommunityServerAPI" Version="1.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="bb api runner icon.png">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 
 </Project>

@@ -5,8 +5,6 @@ VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BattleBitAPIRunner", "BattleBitAPIRunner\BattleBitAPIRunner.csproj", "{1C766FA8-3DA3-4505-88DA-B0E293D31346}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommunityServerAPI", "BattleBit-Community-Server-API\CommunityServerAPI.csproj", "{279EFFCB-DE81-4F6F-BD7C-AD821E7DC9C7}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BBRAPIModules", "BBRAPIModules\BBRAPIModules.csproj", "{B17890B8-4D8C-4FA7-BFFB-20679A42AF7B}"
 EndProject
 Global
@@ -19,10 +17,6 @@ Global
 		{1C766FA8-3DA3-4505-88DA-B0E293D31346}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1C766FA8-3DA3-4505-88DA-B0E293D31346}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1C766FA8-3DA3-4505-88DA-B0E293D31346}.Release|Any CPU.Build.0 = Release|Any CPU
-		{279EFFCB-DE81-4F6F-BD7C-AD821E7DC9C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{279EFFCB-DE81-4F6F-BD7C-AD821E7DC9C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{279EFFCB-DE81-4F6F-BD7C-AD821E7DC9C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{279EFFCB-DE81-4F6F-BD7C-AD821E7DC9C7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B17890B8-4D8C-4FA7-BFFB-20679A42AF7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B17890B8-4D8C-4FA7-BFFB-20679A42AF7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B17890B8-4D8C-4FA7-BFFB-20679A42AF7B}.Release|Any CPU.ActiveCfg = Release|Any CPU

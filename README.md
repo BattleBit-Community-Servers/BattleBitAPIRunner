@@ -55,6 +55,13 @@ Add a nuget dependency to [BBRAPIModules](https://www.nuget.org/packages/BBRAPIM
 In your module source file, have exactly one public class which has the same name as your file and inherit `BBRAPIModules.BattleBitModule`.
 Your module class now has all methods of the BattleBit API, such as `OnConnected`.
 
+### Sepcial callback cases
+- `OnModulesLoaded` is called after all modules have been loaded.
+- `OnPlayerSpawning` will provide the OnPlayerSpawnArguments of the previous (non-null) module output. If any module returns null, the final result will be null.
+- `OnPlayerTypedMessage` final result will be false if any module output is false.
+- `OnPlayerRequestingToChangeRole` final result will be false if any module output is false.
+- `OnPlayerRequestingToChangeTeam` final result will be false if any module output is false.
+
 ### Optional module dependencies
 To optionally use specific modules, add a public property of type `BattleBitModule` or `dynamic` to your module and add the `[ModuleReference]` attribute to it. Make sure the name of the property is the name of the required module.
 ```cs
