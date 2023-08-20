@@ -1,6 +1,6 @@
 # BattleBitAPIRunner
 
-Modular battlebit community server api runner. Lets you host community servers with modules without having to code.
+Modular battlebit community server api runner. Lets you host community servers with modules without having to code. If you know Umod/Rust.Oxide then you will be right at home.
 
 Hosting tutorial: https://www.youtube.com/watch?v=B8JNTL4-AxU  
 Module programming tutorial: https://www.youtube.com/watch?v=RN8891f0B14
