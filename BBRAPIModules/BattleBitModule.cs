@@ -1,4 +1,6 @@
-﻿using BattleBitAPI.Common;
+﻿using BattleBitAPI;
+using BattleBitAPI.Common;
+using BattleBitAPI.Server;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -70,10 +72,6 @@ namespace BBRAPIModules
         {
 
         }
-        public virtual async Task OnReconnected()
-        {
-
-        }
         public virtual async Task OnDisconnected()
         {
 
@@ -109,11 +107,11 @@ namespace BBRAPIModules
         {
 
         }
-        public virtual async Task OnPlayerJoinedSquad(RunnerPlayer player, Squads squad)
+        public virtual async Task OnPlayerJoinedSquad(RunnerPlayer player, Squad<RunnerPlayer> squad)
         {
 
         }
-        public virtual async Task OnPlayerLeftSquad(RunnerPlayer player, Squads squad)
+        public virtual async Task OnPlayerLeftSquad(RunnerPlayer player, Squad<RunnerPlayer> squad)
         {
 
         }
@@ -121,7 +119,11 @@ namespace BBRAPIModules
         {
 
         }
-        public virtual async Task<OnPlayerSpawnArguments> OnPlayerSpawning(RunnerPlayer player, OnPlayerSpawnArguments request)
+        public virtual async Task OnSquadPointsChanged(Squad<RunnerPlayer> squad, int newPoints)
+        {
+
+        }
+        public virtual async Task<OnPlayerSpawnArguments?> OnPlayerSpawning(RunnerPlayer player, OnPlayerSpawnArguments request)
         {
             return request;
         }
@@ -139,9 +141,11 @@ namespace BBRAPIModules
         }
         public virtual async Task OnAPlayerDownedAnotherPlayer(OnPlayerKillArguments<RunnerPlayer> args)
         {
+
         }
         public virtual async Task OnAPlayerRevivedAnotherPlayer(RunnerPlayer from, RunnerPlayer to)
         {
+
         }
         public virtual async Task OnPlayerReported(RunnerPlayer from, RunnerPlayer to, ReportReason reason, string additional)
         {
@@ -155,8 +159,11 @@ namespace BBRAPIModules
         {
 
         }
-
         public virtual async Task OnRoundEnded()
+        {
+
+        }
+        public virtual async Task OnSessionChanged(long oldSessionID, long newSessionID)
         {
 
         }

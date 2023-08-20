@@ -147,9 +147,9 @@ namespace BBRAPIModules
         {
             await this.invokeOnModules(nameof(OnTick));
         }
-        public override async Task OnReconnected()
+        public override async Task OnSessionChanged(long oldSessionID, long newSessionID)
         {
-            await this.invokeOnModules(nameof(OnReconnected));
+            await this.invokeOnModules(nameof(OnSessionChanged));
         }
         public override async Task OnDisconnected()
         {
