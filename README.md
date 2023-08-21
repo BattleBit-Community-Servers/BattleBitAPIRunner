@@ -28,10 +28,10 @@ Configure the runner in the `appsettings.json`:
 ```
 - IP: Listening IP
 - Port: Listening port
-- ModulePath: Path to the folder containing all modules (is created if not exist)
-- Modules: Array of individual module file paths
-- DependencyPath: Path to the folder containing all binary (dll) dependencies (is created if not exist)
-- ConfigurationPath: Path to the folder containing all module and per-server module configuration files (is created if not exist)
+- ModulePath: Path to the folder containing all modules (is created if not exist), default value see above
+- Modules: Array of individual module file paths, default value `[]`
+- DependencyPath: Path to the folder containing all binary (dll) dependencies (is created if not exist), default value see above
+- ConfigurationPath: Path to the folder containing all module and per-server module configuration files (is created if not exist), default value see above
 
 Module and per-server module configurations are located in the configurations subdirectory, if you have not changed the path.
 
