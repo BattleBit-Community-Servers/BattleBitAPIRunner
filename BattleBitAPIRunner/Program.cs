@@ -93,6 +93,20 @@ namespace BattleBitAPIRunner
                 }
             }).Where(m => m is not null).Select(m => m!).ToArray();
 
+            Module[][] duplicateModules = modules.GroupBy(m => m.Name).Where(g => g.Count() > 1).Select(g => g.ToArray()).ToArray();
+            if (duplicateModules.Length > 0)
+            {
+                foreach (Module[] duplicate in duplicateModules)
+                {
+                    Console.WriteLine($"Duplicate modules found for {duplicate[0].Name}:");
+                    foreach (Module module in duplicate)
+                    {
+                        Console.WriteLine($"  {module.ModuleFilePath}");
+                    }
+                }
+                throw new Exception("Duplicate modules found, aborting startup.");
+            }
+
             Module[] sortedModules = new ModuleDependencyResolver(modules).GetDependencyOrder().ToArray();
 
             foreach (Module module in sortedModules)
