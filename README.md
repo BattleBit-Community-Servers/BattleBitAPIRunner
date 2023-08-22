@@ -129,6 +129,7 @@ This will create a `./configurations/MyModule/GlobalConfig.json` and a `./config
 
 ## Other modules
 - https://github.com/RainOrigami/BattleBitZombies - 28 days later inspired zombie pvp game mode module
+- https://github.com/mocfunky/BattleBitBaseModules/blob/main/Snipers.cs - Snipers only module
 
 # Features to come
 - Dynamic loading and unloading of modules without the need to restart
