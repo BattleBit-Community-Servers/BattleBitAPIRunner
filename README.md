@@ -5,6 +5,8 @@ Modular battlebit community server api runner. Lets you host community servers w
 Hosting tutorial: https://www.youtube.com/watch?v=B8JNTL4-AxU  
 Module programming tutorial: https://www.youtube.com/watch?v=RN8891f0B14
 
+Currently rewriting this page to wiki: https://github.com/RainOrigami/BattleBitAPIRunner/wiki Check it out, it contains some more detailed information and guides.
+
 ## Features
 
 - Start the community server API endpoint for your server to connect to
