@@ -149,7 +149,7 @@ namespace BBRAPIModules
         }
         public override async Task OnSessionChanged(long oldSessionID, long newSessionID)
         {
-            await this.invokeOnModules(nameof(OnSessionChanged));
+            await this.invokeOnModules(nameof(OnSessionChanged), oldSessionID, newSessionID);
         }
         public override async Task OnDisconnected()
         {
