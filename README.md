@@ -2,6 +2,8 @@
 
 Modular battlebit community server api runner. Lets you host community servers with modules without having to code. If you know Umod/Rust.Oxide then you will be right at home.
 
+# THIS IS NOT AN OFFICIAL BATTLEBIT TOOL, IT IS JUST AN IMPLEMENTATION OF THE OFFICIAL API THAT CAN BE USED INSTEAD OF THE API. IT IS NOT ASSOCIATED WITH BATTLEBIT OR THEIR DEVELOPERS AND A COMMUNITY MADE PRODUCT
+
 Hosting tutorial: https://www.youtube.com/watch?v=B8JNTL4-AxU  
 Module programming tutorial: https://www.youtube.com/watch?v=RN8891f0B14
 
