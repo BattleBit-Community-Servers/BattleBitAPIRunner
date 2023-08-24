@@ -21,7 +21,7 @@ namespace BattleBitAPIRunner
 
             foreach (Module moduleLoader in moduleLoaders)
             {
-                foreach (string dependency in moduleLoader.OptionalDependencies)
+                foreach (string dependency in moduleLoader.RequiredDependencies.Union(moduleLoader.OptionalDependencies))
                 {
                     if (!this.dependencyGraph.ContainsKey(dependency))
                     {

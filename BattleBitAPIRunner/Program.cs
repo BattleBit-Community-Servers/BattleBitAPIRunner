@@ -42,8 +42,11 @@ namespace BattleBitAPIRunner
         {
             Task.Run(async () =>
             {
+                List<string> changedModules = new();
                 while (true)
                 {
+                    changedModules.Clear();
+
                     foreach (string moduleFile in Directory.GetFiles(this.configuration.ModulesPath, "*.cs").Union(this.configuration.Modules))
                     {
                         if (!this.watchedFiles.ContainsKey(moduleFile))
@@ -61,13 +64,34 @@ namespace BattleBitAPIRunner
 
                         if (this.watchedFiles[moduleFile].Hash != fileHash)
                         {
-                            string moduleName = Path.GetFileNameWithoutExtension(moduleFile);
-                            unloadModules();
-                            Module.RemoveModule(Module.Modules.First(m => m.Name == moduleName));
-                            loadModules();
+                            changedModules.Add(moduleFile);
                         }
 
                         this.watchedFiles[moduleFile] = (fileHash, lastWrite);
+                    }
+
+                    if (changedModules.Any())
+                    {
+                        try
+                        {
+                            unloadModules();
+
+                            foreach (string moduleFile in changedModules)
+                            {
+                                string moduleName = Path.GetFileNameWithoutExtension(moduleFile);
+                                Module? module = Module.Modules.FirstOrDefault(m => m.Name == moduleName);
+                                if (module is not null)
+                                {
+                                    Module.RemoveModule(module);
+                                }
+                            }
+
+                            loadModules();
+                        }
+                        catch (Exception ex)
+                        {
+                            await Console.Out.WriteLineAsync($"Failed dynamic loading of modules {string.Join(", ", changedModules.Select(f => Path.GetFileNameWithoutExtension(f)))}: {ex}");
+                        }
                     }
 
                     await Task.Delay(1000);
@@ -227,11 +251,25 @@ namespace BattleBitAPIRunner
 
             Module[] sortedModules = new ModuleDependencyResolver(modules).GetDependencyOrder().ToArray();
 
+            int compiledModuleCount = 0;
+
             foreach (Module module in sortedModules)
             {
                 try
                 {
-                    module.Compile();
+                    string[] missingRequirements = module.RequiredDependencies.Where(r => sortedModules.All(m => m.Name != r)).ToArray();
+                    if (missingRequirements.Length > 0)
+                    {
+                        Console.WriteLine($"Module {module.Name} is missing required dependencies: {string.Join(", ", missingRequirements)}");
+                        continue;
+                    }
+
+                    if (module.AssemblyBytes is null)
+                    {
+                        module.Compile();
+                        compiledModuleCount++;
+                    }
+
                     module.Load();
                 }
                 catch (Exception ex)
@@ -243,7 +281,7 @@ namespace BattleBitAPIRunner
                 Console.WriteLine($"Loaded module {module.Name}");
             }
 
-            Console.WriteLine($"{Module.Modules.Count} modules loaded.");
+            Console.WriteLine($"{(compiledModuleCount == Module.Modules.Count ? Module.Modules.Count.ToString() : $"{compiledModuleCount} changed, {Module.Modules.Count} total")} module{(Module.Modules.Count != 1 ? "s" : "")} loaded.");
 
             foreach (RunnerServer server in this.servers)
             {
