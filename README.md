@@ -130,6 +130,7 @@ This will create a `./configurations/MyModule/GlobalConfig.json` and a `./config
 ## Other modules
 - https://github.com/RainOrigami/BattleBitZombies - 28 days later inspired zombie pvp game mode module
 - https://github.com/mocfunky/BattleBitBaseModules/blob/main/Snipers.cs - Snipers only module
+- https://github.com/mocfunky/BattleBitBaseModules/blob/main/Rotation.cs - Game mode rotation
 
 # Features to come
 - You can suggest some over at the [Blood is Good Discord](https://discord.bloodisgood.org)
