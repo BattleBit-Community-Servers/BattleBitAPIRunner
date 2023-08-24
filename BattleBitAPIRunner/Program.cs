@@ -1,4 +1,5 @@
-﻿using BattleBitAPI.Server;
+﻿using BattleBitAPI.Common;
+using BattleBitAPI.Server;
 using BBRAPIModules;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.Extensions.Configuration;
@@ -460,8 +461,15 @@ namespace BattleBitAPIRunner
 
         private void startServerListener()
         {
+            this.serverListener.LogLevel = this.configuration.LogLevel;
+            this.serverListener.OnLog += this.serverListener_OnLog;
             this.serverListener.Start(this.configuration.IPAddress, this.configuration.Port!.Value);
             Console.WriteLine($"Listener started at {this.configuration.IPAddress}:{this.configuration.Port.Value}");
+        }
+
+        private void serverListener_OnLog(LogLevel level, string message, object? obj)
+        {
+            Console.WriteLine($"[Listener log] [{level}] {message}");
         }
 
         private void loadConfiguration()

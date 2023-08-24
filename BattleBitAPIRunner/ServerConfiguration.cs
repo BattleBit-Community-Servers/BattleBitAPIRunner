@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BattleBitAPI.Common;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -24,5 +25,6 @@ namespace BattleBitAPIRunner
 
         public string DependencyPath { get; set; } = "./dependencies";
         public string ConfigurationPath { get; set; } = "./configurations";
+        public LogLevel LogLevel { get; set; } = LogLevel.None;
     }
 }
