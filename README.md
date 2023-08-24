@@ -13,6 +13,7 @@ Currently rewriting this page to wiki: https://github.com/RainOrigami/BattleBitA
 
 - Start the community server API endpoint for your server to connect to
 - Modules are simple C# source files `.cs`
+- Modules support hot reloading
 - Modules support module dependencies
 - Modules support optional module dependencies
 - Modules support binary dependencies (Newtonsoft.Json, System.Net.Http, ...)
@@ -27,7 +28,9 @@ Configure the runner in the `appsettings.json`:
   "ModulePath": "./modules",
   "Modules": [ "C:\\path\\to\\specific\\ModuleFile.cs" ],
   "DependencyPath": "./dependencies",
-  "ConfigurationPath": "./configurations"
+  "ConfigurationPath": "./configurations",
+  "LogLevel": "None",
+  "WarningThreshold": 250,
 }
 ```
 - IP: Listening IP
@@ -36,6 +39,8 @@ Configure the runner in the `appsettings.json`:
 - Modules: Array of individual module file paths, default value `[]`
 - DependencyPath: Path to the folder containing all binary (dll) dependencies (is created if not exist), default value see above
 - ConfigurationPath: Path to the folder containing all module and per-server module configuration files (is created if not exist), default value see above
+- LogLevel: Logging level, default value `None`
+- WarningThreshold: Time in milliseconds after which a warning is logged if a server method on a module takes too long, default value `250`
 
 Module and per-server module configurations are located in the configurations subdirectory, if you have not changed the path.
 
@@ -67,23 +72,16 @@ Your module class now has all methods of the BattleBit API, such as `OnConnected
 - `OnPlayerRequestingToChangeTeam` final result will be false if any module output is false.
 
 ### Optional module dependencies
-To optionally use specific modules, add a public property of type `BattleBitModule` or `dynamic` to your module and add the `[ModuleReference]` attribute to it. Make sure the name of the property is the name of the required module.
+To optionally use specific modules, add a public property of type or `dynamic?` to your module and add the `[ModuleReference]` attribute to it. Make sure the name of the property is the name of the required module.
 ```cs
-[ModuleReference]
-public BattleBitModule? PlayerFinder { get; set; }
-// or using dynamic
 [ModuleReference]
 public dynamic? RichText { get; set; }
 ```
 When all modules are loaded (`OnModulesLoaded`) the dependant module will be available on this property, if it was loaded.
 
-You can call methods on that module by using the `Call` method or by invoking the method dynamically.
+You can call methods on that module by invoking the method dynamically.
 
 ```cs
-this.PlayerFinder?.Call("TargetMethod");
-this.PlayerFinder?.Call("TargetMethodWithParams", "param1", 2, 3);
-bool? result = this.PlayerFinder?.Call<bool>("TargetMethodWithReturnValue");
-// or using dynamic
 this.RichText?.TargetMethod();
 this.RichText?.TargetMethodWithParams("param1", 2, 3);
 bool? result = this.RichText?.TargetMethodWithReturnValue();
@@ -134,5 +132,4 @@ This will create a `./configurations/MyModule/GlobalConfig.json` and a `./config
 - https://github.com/mocfunky/BattleBitBaseModules/blob/main/Snipers.cs - Snipers only module
 
 # Features to come
-- Dynamic loading and unloading of modules without the need to restart
 - You can suggest some over at the [Blood is Good Discord](https://discord.bloodisgood.org)
