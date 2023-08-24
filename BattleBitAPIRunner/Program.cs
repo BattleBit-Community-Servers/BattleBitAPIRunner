@@ -141,7 +141,18 @@ namespace BattleBitAPIRunner
                     case "servers":
                         foreach (RunnerServer server in this.servers)
                         {
-                            Console.WriteLine($"{server.GameIP}:{server.GamePort} - {server.IsConnected}");
+                            Console.Write($"{server.GameIP}:{server.GamePort} is");
+                            if (server.IsConnected)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Green;
+                                Console.WriteLine("Connected");
+                            }
+                            else
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("Not connected");
+                            }
+                            Console.ResetColor();
                         }
                         break;
                     case "list":
@@ -161,7 +172,9 @@ namespace BattleBitAPIRunner
                     case "reload":
                         if (commandParts.Length < 2)
                         {
+                            Console.ForegroundColor = ConsoleColor.Red;
                             Console.WriteLine("Usage: reload <module>");
+                            Console.ResetColor();
                             break;
                         }
 
@@ -169,7 +182,9 @@ namespace BattleBitAPIRunner
                         Module? moduleToLoad = Module.Modules.FirstOrDefault(m => m.Name.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
                         if (moduleToLoad is null)
                         {
+                            Console.ForegroundColor = ConsoleColor.Red;
                             Console.WriteLine($"Module {moduleName} not found.");
+                            Console.ResetColor();
                             break;
                         }
 
@@ -216,7 +231,10 @@ namespace BattleBitAPIRunner
                 try { return new Module(m); }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to load module {Path.GetFileName(m)}: {ex}");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Failed to load module {Path.GetFileName(m)}");
+                    Console.ResetColor();
+                    Console.WriteLine(ex.ToString());
                     return null;
                 }
             }).Where(m => m is not null).Select(m => m!).Union(Module.Modules).ToArray();
@@ -241,7 +259,9 @@ namespace BattleBitAPIRunner
             {
                 foreach (Module[] duplicate in duplicateModules)
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Duplicate modules found for {duplicate[0].Name}:");
+                    Console.ResetColor();
                     foreach (Module module in duplicate)
                     {
                         Console.WriteLine($"  {module.ModuleFilePath}");
@@ -261,7 +281,10 @@ namespace BattleBitAPIRunner
                     string[] missingRequirements = module.RequiredDependencies.Where(r => sortedModules.All(m => m.Name != r)).ToArray();
                     if (missingRequirements.Length > 0)
                     {
-                        Console.WriteLine($"Module {module.Name} is missing required dependencies: {string.Join(", ", missingRequirements)}");
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"Module {module.Name} is missing required dependencies:");
+                        Console.ResetColor();
+                        Console.WriteLine($"{string.Join(Environment.NewLine, missingRequirements)}");
                         continue;
                     }
 
@@ -275,13 +298,20 @@ namespace BattleBitAPIRunner
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to load module {Path.GetFileName(module.Name)}: {ex}");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Failed to load module {Path.GetFileName(module.Name)}");
+                    Console.ResetColor();
+                    Console.WriteLine(ex.ToString());
                     continue;
                 }
 
-                Console.WriteLine($"Loaded module {module.Name}");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write($"Loaded module ");
+                Console.ResetColor();
+                Console.WriteLine(module.Name);
             }
 
+            Console.WriteLine();
             Console.WriteLine($"{(compiledModuleCount == Module.Modules.Count ? Module.Modules.Count.ToString() : $"{compiledModuleCount} changed, {Module.Modules.Count} total")} module{(Module.Modules.Count != 1 ? "s" : "")} loaded.");
 
             foreach (RunnerServer server in this.servers)
@@ -325,7 +355,10 @@ namespace BattleBitAPIRunner
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to load module {module.Name}: {ex}");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Failed to load module {module.Name}:");
+                    Console.ResetColor();
+                    Console.WriteLine(ex.ToString());
                     continue;
                 }
 
@@ -347,7 +380,10 @@ namespace BattleBitAPIRunner
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Failed to load module {module.Name} configuration {property.Name}: {ex}");
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"Failed to load module {module.Name} configuration {property.Name}:");
+                        Console.ResetColor();
+                        Console.WriteLine(ex.ToString());
                         continue;
                     }
                 }
@@ -385,14 +421,18 @@ namespace BattleBitAPIRunner
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} threw an exception: {ex}");
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} threw an exception:");
+                    Console.ResetColor();
+                    Console.WriteLine(ex.ToString());
                 }
                 stopwatch.Stop();
 
-                if (stopwatch.ElapsedMilliseconds > 250)
+                if (stopwatch.ElapsedMilliseconds > this.configuration.WarningThreshold)
                 {
-                    // TODO: move this to a configurable field in ServerConfiguration
+                    Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} took {stopwatch.ElapsedMilliseconds}ms to execute.");
+                    Console.ResetColor();
                 }
             }
         }
@@ -464,12 +504,17 @@ namespace BattleBitAPIRunner
             this.serverListener.LogLevel = this.configuration.LogLevel;
             this.serverListener.OnLog += this.serverListener_OnLog;
             this.serverListener.Start(this.configuration.IPAddress, this.configuration.Port!.Value);
-            Console.WriteLine($"Listener started at {this.configuration.IPAddress}:{this.configuration.Port.Value}");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write($"Listener started at ");
+            Console.ResetColor();
+            Console.WriteLine($"{this.configuration.IPAddress}:{this.configuration.Port.Value}");
         }
 
         private void serverListener_OnLog(LogLevel level, string message, object? obj)
         {
-            Console.WriteLine($"[Listener log] [{level}] {message}");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"[{level}] {message}");
+            Console.ResetColor();
         }
 
         private void loadConfiguration()

@@ -26,5 +26,6 @@ namespace BattleBitAPIRunner
         public string DependencyPath { get; set; } = "./dependencies";
         public string ConfigurationPath { get; set; } = "./configurations";
         public LogLevel LogLevel { get; set; } = LogLevel.None;
+        public int WarningThreshold { get; set; } = 250;
     }
 }

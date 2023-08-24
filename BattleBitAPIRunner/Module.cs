@@ -54,14 +54,22 @@ namespace BattleBitAPIRunner
 
         private void initialize()
         {
-            Console.WriteLine($"Parsing module from file {Path.GetFileName(this.ModuleFilePath)}");
+            Console.Write("Parsing module from file ");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(Path.GetFileName(this.ModuleFilePath));
+            Console.ResetColor();
 
             this.code = File.ReadAllText(this.ModuleFilePath);
             this.syntaxTree = CSharpSyntaxTree.ParseText(code, null, this.ModuleFilePath, Encoding.UTF8);
             this.Name = this.getName();
             this.getDependencies();
 
-            Console.WriteLine($"Module {this.Name} has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
+            Console.Write("Module ");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(this.Name);
+            Console.ResetColor();
+            Console.WriteLine($" has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
+            Console.WriteLine();
         }
 
         private void getDependencies()
@@ -94,7 +102,10 @@ namespace BattleBitAPIRunner
 
         public void Load()
         {
-            Console.WriteLine($"Loading module {this.Name}");
+            Console.Write("Loading module ");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(this.Name);
+            Console.ResetColor();
 
             if (this.AssemblyBytes == null)
             {
@@ -128,7 +139,10 @@ namespace BattleBitAPIRunner
                 return;
             }
 
-            Console.WriteLine($"Compiling module {this.Name}");
+            Console.Write("Compiling module ");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(this.Name);
+            Console.ResetColor();
 
             List<PortableExecutableReference> refs = new(AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location)).Select(a => MetadataReference.CreateFromFile(a.Location)));
             foreach (Module module in modules)
