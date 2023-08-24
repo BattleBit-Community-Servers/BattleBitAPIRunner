@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Net;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
 
@@ -22,6 +23,7 @@ namespace BattleBitAPIRunner
         private ServerConfiguration configuration = new();
         private List<RunnerServer> servers = new();
         private ServerListener<RunnerPlayer, RunnerServer> serverListener = new();
+        private Dictionary<string, (string Hash, DateTime LastModified)> watchedFiles = new();
 
         public Program()
         {
@@ -30,9 +32,57 @@ namespace BattleBitAPIRunner
             loadDependencies();
             loadModules();
             hookModules();
+            fileWatchers();
             startServerListener();
 
             consoleCommandHandler();
+        }
+
+        private void fileWatchers()
+        {
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    foreach (string moduleFile in Directory.GetFiles(this.configuration.ModulesPath, "*.cs").Union(this.configuration.Modules))
+                    {
+                        if (!this.watchedFiles.ContainsKey(moduleFile))
+                        {
+                            this.watchedFiles.Add(moduleFile, (string.Empty, DateTime.MinValue));
+                        }
+
+                        DateTime lastWrite = File.GetLastWriteTime(moduleFile);
+                        if (this.watchedFiles[moduleFile].LastModified == lastWrite)
+                        {
+                            continue;
+                        }
+
+                        string fileHash = CalculateFileHash(new FileInfo(moduleFile));
+
+                        if (this.watchedFiles[moduleFile].Hash != fileHash)
+                        {
+                            string moduleName = Path.GetFileNameWithoutExtension(moduleFile);
+                            unloadModules();
+                            Module.RemoveModule(Module.Modules.First(m => m.Name == moduleName));
+                            loadModules();
+                        }
+
+                        this.watchedFiles[moduleFile] = (fileHash, lastWrite);
+                    }
+
+                    await Task.Delay(1000);
+                }
+            });
+        }
+
+        static string CalculateFileHash(FileInfo fileInfo)
+        {
+            using (var md5 = MD5.Create())
+            using (var stream = fileInfo.OpenRead())
+            {
+                byte[] hashBytes = md5.ComputeHash(stream);
+                return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+            }
         }
 
         private void loadDependencies()
@@ -75,15 +125,68 @@ namespace BattleBitAPIRunner
                             Console.WriteLine(module.Name);
                         }
                         break;
+                    case "reloadall":
+                        unloadModules();
+                        foreach (Module module in Module.Modules.ToArray())
+                        {
+                            Module.RemoveModule(module);
+                        }
+                        loadModules();
+                        break;
+                    case "reload":
+                        if (commandParts.Length < 2)
+                        {
+                            Console.WriteLine("Usage: reload <module>");
+                            break;
+                        }
+
+                        string moduleName = commandParts[1];
+                        Module? moduleToLoad = Module.Modules.FirstOrDefault(m => m.Name.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
+                        if (moduleToLoad is null)
+                        {
+                            Console.WriteLine($"Module {moduleName} not found.");
+                            break;
+                        }
+
+                        unloadModules();
+                        Module.RemoveModule(moduleToLoad);
+                        loadModules();
+                        break;
                     default:
                         break;
                 }
             }
         }
 
+        private void unloadModules()
+        {
+            foreach (RunnerServer server in this.servers)
+            {
+                List<BattleBitModule> instances = new();
+                foreach (Module module in Module.Modules)
+                {
+                    BattleBitModule? moduleInstance = server.GetModule(module.ModuleType);
+                    if (moduleInstance is null)
+                    {
+                        continue;
+                    }
+
+                    instances.Add(moduleInstance);
+                    moduleInstance.OnModuleUnloading();
+                }
+
+                foreach (BattleBitModule moduleInstance in instances)
+                {
+                    moduleInstance.Unload();
+                }
+            }
+
+            Module.UnloadContext();
+        }
+
         private void loadModules()
         {
-            Module[] modules = Directory.GetFiles(this.configuration.ModulesPath, "*.cs").Union(this.configuration.Modules).Select(m =>
+            Module[] modules = Directory.GetFiles(this.configuration.ModulesPath, "*.cs").Union(this.configuration.Modules).Where(f => Module.Modules.All(m => m.Name != Path.GetFileNameWithoutExtension(f))).Select(m =>
             {
                 try { return new Module(m); }
                 catch (Exception ex)
@@ -91,7 +194,22 @@ namespace BattleBitAPIRunner
                     Console.WriteLine($"Failed to load module {Path.GetFileName(m)}: {ex}");
                     return null;
                 }
-            }).Where(m => m is not null).Select(m => m!).ToArray();
+            }).Where(m => m is not null).Select(m => m!).Union(Module.Modules).ToArray();
+
+            foreach (Module toRemove in Module.Modules.ToArray())
+            {
+                Module.RemoveModule(toRemove);
+            }
+
+            foreach (Module toWatch in modules)
+            {
+                if (this.watchedFiles.ContainsKey(toWatch.ModuleFilePath))
+                {
+                    continue;
+                }
+
+                this.watchedFiles.Add(toWatch.ModuleFilePath, (CalculateFileHash(new FileInfo(toWatch.ModuleFilePath)), File.GetLastWriteTime(toWatch.ModuleFilePath)));
+            }
 
             Module[][] duplicateModules = modules.GroupBy(m => m.Name).Where(g => g.Count() > 1).Select(g => g.ToArray()).ToArray();
             if (duplicateModules.Length > 0)
@@ -126,6 +244,12 @@ namespace BattleBitAPIRunner
             }
 
             Console.WriteLine($"{Module.Modules.Count} modules loaded.");
+
+            foreach (RunnerServer server in this.servers)
+            {
+                loadServerModules(server);
+                server.OnConnected();
+            }
         }
 
         private void hookModules()
@@ -137,6 +261,13 @@ namespace BattleBitAPIRunner
             RunnerServer server = new RunnerServer();
             this.servers.Add(server);
 
+            loadServerModules(server, ip, port);
+
+            return server;
+        }
+
+        private void loadServerModules(RunnerServer server, IPAddress? ip = null, ushort? port = null)
+        {
             List<BattleBitModule> battleBitModules = new();
 
             foreach (Module module in Module.Modules)
@@ -170,7 +301,7 @@ namespace BattleBitAPIRunner
                         }
 
                         ModuleConfiguration moduleConfiguration = Activator.CreateInstance(property.PropertyType) as ModuleConfiguration;
-                        moduleConfiguration.Initialize(moduleInstance, property, $"{ip}_{port}");
+                        moduleConfiguration.Initialize(moduleInstance, property, $"{ip ?? server.GameIP}_{port ?? server.GamePort}");
                         moduleConfiguration.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
                         moduleConfiguration.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
                         moduleConfiguration.Load();
@@ -210,6 +341,7 @@ namespace BattleBitAPIRunner
                 try
                 {
                     stopwatch.Start();
+                    battleBitModule.IsLoaded = true;
                     battleBitModule.OnModulesLoaded();
                 }
                 catch (Exception ex)
@@ -224,8 +356,6 @@ namespace BattleBitAPIRunner
                     Console.WriteLine($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} took {stopwatch.ElapsedMilliseconds}ms to execute.");
                 }
             }
-
-            return server;
         }
 
         private void ModuleConfiguration_OnSavingRequest(object? sender, BattleBitModule module, PropertyInfo property, string serverName)

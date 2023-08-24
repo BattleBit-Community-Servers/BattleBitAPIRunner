@@ -10,7 +10,9 @@ namespace BBRAPIModules
 {
     public abstract class BattleBitModule
     {
-        protected RunnerServer Server { get; private set; }
+        public RunnerServer Server { get; private set; }
+
+        public bool IsLoaded { get; internal set; }
 
         internal void SetServer(RunnerServer server)
         {
@@ -52,13 +54,15 @@ namespace BBRAPIModules
             return (T)method.Invoke(this, fullParameters.ToArray());
         }
 
-        protected void Unload()
+        public void Unload()
         {
+            this.IsLoaded = false;
             this.Server.RemoveModule(this);
             this.Server = null!;
         }
 
         public virtual void OnModulesLoaded() { } // sighs silently
+        public virtual void OnModuleUnloading() { }
 
         #region GameServer.cs copy-paste
         // TODO: there must be a better way to do this!?

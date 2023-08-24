@@ -35,6 +35,17 @@ namespace BattleBitAPIRunner
         private SyntaxTree syntaxTree;
         private string code;
 
+        public static void UnloadContext()
+        {
+            moduleContext.Unload();
+            moduleContext = new AssemblyLoadContext("Modules", true);
+        }
+
+        public static void RemoveModule(Module module)
+        {
+            modules.Remove(module);
+        }
+
         public Module(string moduleFilePath)
         {
             this.ModuleFilePath = moduleFilePath;
@@ -112,9 +123,14 @@ namespace BattleBitAPIRunner
 
         public void Compile()
         {
+            if (this.AssemblyBytes is not null)
+            {
+                return;
+            }
+
             Console.WriteLine($"Compiling module {this.Name}");
 
-            List<PortableExecutableReference> refs = new(AppDomain.CurrentDomain.GetAssemblies().Where(a => !string.IsNullOrWhiteSpace(a.Location)).Select(a => MetadataReference.CreateFromFile(a.Location)));
+            List<PortableExecutableReference> refs = new(AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location)).Select(a => MetadataReference.CreateFromFile(a.Location)));
             foreach (Module module in modules)
             {
                 using (MemoryStream assemblyStream = new(module.AssemblyBytes))
