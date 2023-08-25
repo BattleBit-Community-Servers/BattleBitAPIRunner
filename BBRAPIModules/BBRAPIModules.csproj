@@ -12,8 +12,8 @@
 		<Authors>RainOrigami</Authors>
 		<Company>CodeFreak.net</Company>
 		<Description>Modularize your BattleBit Remastered Community Server API</Description>
-		<PackageProjectUrl>https://github.com/RainOrigami/BattleBitAPIRunner</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/RainOrigami/BattleBitAPIRunner</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/BattleBit-Community-Servers/BattleBitAPIRunner</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/BattleBit-Community-Servers/BattleBitAPIRunner</RepositoryUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>battlebit, battle bit, remastered, community server, api, modules, modular</PackageTags>
