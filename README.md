@@ -48,12 +48,24 @@ Module and per-server module configurations are located in the configurations su
 
 ## Usage
 
+### Prerequisites
+- [.net 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) (x64, 64-bit version) - [Installation Guide](https://learn.microsoft.com/en-us/dotnet/core/install/).
+
 Download the [latest release](https://github.com/RainOrigami/BattleBitAPIRunner/releases), unpack, configure and start `BattleBitAPIRunner`.
 The modules, dependencies and configurations folder will be created in the same directory as the executable, if you have not specified a different path in the configuration file.
 Modules are loaded upon startup. To reload modules the application has to be restarted.
 
 Place modules in the modules folder or specify their path in the configuration file.
 Place binary dependencies in the dependencies folder.
+
+### Configuring modules
+Global and per-server module configurations are located in the `./configurations` subdirectory, if you have not changed the path ([`ConfigurationPath`](https://github.com/BattleBit-Community-Servers/BattleBitAPIRunner#configuration))
+Per-server module configurations are located in a subdirectory of the configurations directory named after the IP and port of the server.
+For modules that require a configuration, the folders and configuration files will be automatically created when a BattleBit server connects to the API.
+Currently, only whitelisted servers can connect to the API and therefore it is necessary to be whitelisted for the configuration files to be created.
+
+### Downloading modules
+You can find approved modules on [our Discord](https://discord.gg/FTkj9xUvHh). We recommend to only download approved modules which have been checked by our staff for malicious or dangerous code.
 
 ## Developing modules
 
@@ -122,39 +134,8 @@ public class MyModule : BattleBitModule
 ```
 This will create a `./configurations/MyModule/GlobalConfig.json` and a `./configurations/127.0.0.1_29595/MyModule/PerServerConfig.json` (for each server) configuration file.
 
-# Modules
-## Example modules
+# Example modules
 - https://github.com/RainOrigami/BattleBitExamples
 
-## Base modules
-- https://github.com/RainOrigami/BattleBitBaseModules - A collection of basic modules to get you started (MOTD, PlayerFinder, PlayerPermissions, CommandHandler, PermissionsCommands, DiscordWebhooks)
-
-## Other modules
-- https://github.com/RainOrigami/BattleBitZombies - 28 days later inspired zombie pvp game mode module
-- https://github.com/mocfunky/BattleBitBaseModules/blob/main/Snipers.cs - Snipers only module
-- https://github.com/mocfunky/BattleBitBaseModules/blob/main/Rotation.cs - Game mode rotation
-
 # Features to come
-- You can suggest some over at the [Blood is Good Discord](https://discord.bloodisgood.org)
-  
-
-# FAQ
-
-### What do I need to run the API Runner ?
-You'll need .NET 6 x64 (64 bits, because 32 bits version doesn't seem to work) , that you can find [HERE](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
-
-### How do I install .NET 6 ?
-Microsoft has a great documentation about it [HERE](https://learn.microsoft.com/en-us/dotnet/core/install/).
-
-### Where are the configuration files ?
-Module and per-server module configurations are located in the configurations subdirectory, if you have not changed the path. (see [HERE](https://github.com/BattleBit-Community-Servers/BattleBitAPIRunner#configuration))
-So, if you have modules that require a configuration, they will be automatically created when a battlebit server connects to the API in your configuration folder (also gets created).
-
-### How to start the API Runner, I don't have any experience in coding ?
-Basically, download the lastest release, unzip it and run it. Make sure that the apiEndpoint from gour GameServer is the same that the "IP" and "Port" from the `appsettings.json`.
-
-### How to run the API Runner on Windows ?
-unzip it, and start `BattleBitAPIRunner.exe`.
-
-### How to run the API Runner on Linux ?
-unzip it, and type `dotnet BattleBitAPIRunner.dll`.
+- You can suggest some over at the [BattleBit Modular API Discord](https://discord.gg/FTkj9xUvHh)
