@@ -136,3 +136,25 @@ This will create a `./configurations/MyModule/GlobalConfig.json` and a `./config
 
 # Features to come
 - You can suggest some over at the [Blood is Good Discord](https://discord.bloodisgood.org)
+  
+
+# FAQ
+
+### What do I need to run the API Runner ?
+You'll need .NET 6 x64 (64 bits, because 32 bits version doesn't seem to work) , that you can find [HERE](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
+
+### How do I install .NET 6 ?
+Microsoft has a great documentation about it [HERE](https://learn.microsoft.com/en-us/dotnet/core/install/).
+
+### Where are the configuration files ?
+Module and per-server module configurations are located in the configurations subdirectory, if you have not changed the path. (see [HERE](https://github.com/BattleBit-Community-Servers/BattleBitAPIRunner#configuration))
+So, if you have modules that require a configuration, they will be automatically created when a battlebit server connects to the API in your configuration folder (also gets created).
+
+### How to start the API Runner, I don't have any experience in coding ?
+Basically, download the lastest release, unzip it and run it. Make sure that the apiEndpoint from gour GameServer is the same that the "IP" and "Port" from the `appsettings.json`.
+
+### How to run the API Runner on Windows ?
+unzip it, and start `BattleBitAPIRunner.exe`.
+
+### How to run the API Runner on Linux ?
+unzip it, and type `dotnet BattleBitAPIRunner.dll`.
