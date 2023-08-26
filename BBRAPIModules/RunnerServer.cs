@@ -243,5 +243,9 @@ namespace BBRAPIModules
         {
             await this.invokeOnModules(nameof(OnSquadPointsChanged), squad, newPoints);
         }
+        public override async Task OnSquadLeaderChanged(Squad<RunnerPlayer> squad, RunnerPlayer newLeader)
+        {
+            await this.invokeOnModules(nameof(OnSquadLeaderChanged), squad, newLeader);
+        }
     }
 }

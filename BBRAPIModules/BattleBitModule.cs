@@ -115,6 +115,10 @@ namespace BBRAPIModules
         {
 
         }
+        public virtual async Task OnSquadLeaderChanged(Squad<RunnerPlayer> squad, RunnerPlayer newLeader)
+        {
+
+        }
         public virtual async Task OnPlayerLeftSquad(RunnerPlayer player, Squad<RunnerPlayer> squad)
         {
 
