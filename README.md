@@ -141,7 +141,7 @@ This will create a `./configurations/MyModule/GlobalConfig.json` and a `./config
 # FAQ
 
 ### What do I need to run the API Runner ?
-You'll need .NET 6 , that you can find [HERE](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
+You'll need .NET 6 x64 (64 bits, because 32 bits version doesn't seem to work) , that you can find [HERE](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
 
 ### Where are the configuration files ?
 Module and per-server module configurations are located in the configurations subdirectory, if you have not changed the path. (see [HERE](https://github.com/BattleBit-Community-Servers/BattleBitAPIRunner#configuration))
