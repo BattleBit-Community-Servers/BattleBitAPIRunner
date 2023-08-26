@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>BattleBit Remastered Modular Community Server API</Title>
-		<AssemblyVersion>0.4.6</AssemblyVersion>
+		<AssemblyVersion>0.4.7</AssemblyVersion>
 		<FileVersion>$(AssemblyVersion)</FileVersion>
 		<Version>$(AssemblyVersion)</Version>
 		<Authors>RainOrigami</Authors>
@@ -29,7 +29,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="CommunityServerAPI" Version="1.0.3" />
+	  <PackageReference Include="CommunityServerAPI" Version="1.0.4" />
 	</ItemGroup>
 
 	<ItemGroup>
