@@ -17,7 +17,7 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>battlebit, battle bit, remastered, community server, api, modules, modular</PackageTags>
-		<PackageIcon>bb api runner icon.png</PackageIcon>
+		<PackageIcon>bbrmodules.png</PackageIcon>
 		<PackageReleaseNotes>- Updated to latest API</PackageReleaseNotes>
 	</PropertyGroup>
 
@@ -33,7 +33,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="bb api runner icon.png">
+	  <None Update="bbrmodules.png">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
 	  </None>
