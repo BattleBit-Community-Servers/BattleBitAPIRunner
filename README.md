@@ -1,4 +1,4 @@
-# BattleBitAPIRunner
+# BattleBitAPIRunner <img src="./assets/logo.png" height="128" width="128" align="right">
 
 Modular battlebit community server api runner. Lets you host community servers with modules without having to code. If you know Umod/Rust.Oxide then you will be right at home.
 
