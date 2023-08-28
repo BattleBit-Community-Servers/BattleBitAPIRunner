@@ -51,10 +51,15 @@ Module and per-server module configurations are located in the configurations su
 ### Prerequisites
 - [.net 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) (x64, 64-bit version) - [Installation Guide](https://learn.microsoft.com/en-us/dotnet/core/install/).
 
+### Installation
+
 Download the [latest release](https://github.com/RainOrigami/BattleBitAPIRunner/releases), unpack, configure and start `BattleBitAPIRunner`.
 The modules, dependencies and configurations folder will be created in the same directory as the executable, if you have not specified a different path in the configuration file.
-Modules are loaded upon startup. To reload modules the application has to be restarted.
+Modules are loaded upon startup. To reload modules or their configuration,type `reload modulename` or `reloadall` or simply replace the module file, it will automatically be reloaded.
 
+### Installing modules
+
+You can find approved modules on [our Discord](https://discord.gg/FTkj9xUvHh). We recommend to only download approved modules which have been checked by our staff for malicious or dangerous code.
 Place modules in the modules folder or specify their path in the configuration file.
 Place binary dependencies in the dependencies folder.
 
@@ -63,9 +68,7 @@ Global and per-server module configurations are located in the `./configurations
 Per-server module configurations are located in a subdirectory of the configurations directory named after the IP and port of the server.
 For modules that require a configuration, the folders and configuration files will be automatically created when a BattleBit server connects to the API.
 Currently, only whitelisted servers can connect to the API and therefore it is necessary to be whitelisted for the configuration files to be created.
-
-### Downloading modules
-You can find approved modules on [our Discord](https://discord.gg/FTkj9xUvHh). We recommend to only download approved modules which have been checked by our staff for malicious or dangerous code.
+To reload a changed configuration, type `reload modulename` or `reloadall` in the API console.
 
 ## Developing modules
 
