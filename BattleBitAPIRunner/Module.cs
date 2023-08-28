@@ -1,4 +1,5 @@
-﻿using BBRAPIModules;
+﻿using BattleBitAPI.Common;
+using BBRAPIModules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -14,6 +15,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
+[assembly: InternalsVisibleTo("BBRAPIModuleVerfication")]
+
 namespace BattleBitAPIRunner
 {
     internal class Module
@@ -25,6 +28,8 @@ namespace BattleBitAPIRunner
         public AssemblyLoadContext? Context { get; private set; }
         public Type? ModuleType { get; private set; }
         public string? Name { get; private set; }
+        public string? Description { get; private set; }
+        public string? Version { get; private set; }
         public string[]? RequiredDependencies { get; private set; }
         public string[]? OptionalDependencies { get; private set; }
         public byte[] AssemblyBytes { get; private set; }
@@ -63,6 +68,7 @@ namespace BattleBitAPIRunner
             this.syntaxTree = CSharpSyntaxTree.ParseText(code, null, this.ModuleFilePath, Encoding.UTF8);
             this.Name = this.getName();
             this.getDependencies();
+            this.getMetadata();
 
             Console.Write("Module ");
             Console.ForegroundColor = ConsoleColor.White;
@@ -70,6 +76,23 @@ namespace BattleBitAPIRunner
             Console.ResetColor();
             Console.WriteLine($" has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
             Console.WriteLine();
+        }
+
+        private void getMetadata()
+        {
+            IEnumerable<AttributeSyntax> attributeSyntaxes = syntaxTree.GetRoot().DescendantNodes().OfType<AttributeSyntax>();
+            IEnumerable<AttributeSyntax> moduleAttributes = attributeSyntaxes.Where(x => x.Name.ToString() + "Attribute" == nameof(ModuleAttribute));
+            if (moduleAttributes.Count() != 1)
+            {
+                throw new Exception("Module must have exactly one ModuleAttribute");
+            }
+
+            AttributeSyntax moduleAttribute = moduleAttributes.First();
+            IEnumerable<AttributeArgumentSyntax> moduleAttributeArguments = moduleAttribute.ArgumentList?.Arguments ?? throw new Exception("ModuleAttribute must have arguments");
+            AttributeArgumentSyntax descriptionArgument = moduleAttributeArguments.ElementAtOrDefault(0) ?? throw new Exception("ModuleAttribute must have a description argument");
+            AttributeArgumentSyntax versionArgument = moduleAttributeArguments.ElementAtOrDefault(1) ?? throw new Exception("ModuleAttribute must have a version argument");
+            this.Description = descriptionArgument.Expression.ToString().Trim('"');
+            this.Version = versionArgument.Expression.ToString().Trim('"');
         }
 
         private void getDependencies()
