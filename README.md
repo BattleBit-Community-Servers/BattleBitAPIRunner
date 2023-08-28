@@ -72,6 +72,26 @@ To reload a changed configuration, type `reload modulename` or `reloadall` in th
 
 ## Developing modules
 
+```cs
+using BBRAPIModules;
+using System.Threading.Tasks;
+namespace MyBattleBitModule;
+
+public class LoadingScreenText : BattleBitModule
+{
+    public LoadingScreenTextConfiguration Configuration { get; set; }
+    public override async Task OnConnected()
+    {
+        this.Server.LoadingScreenText = this.Configuration.LoadingScreenText;
+    }
+}
+public class LoadingScreenTextConfiguration : ModuleConfiguration
+{
+    public string LoadingScreenText { get; set; } = "This is a community server!";
+}
+```
+*A simple module example*
+
 Modules are .net 6.0 C# source code files. They are compiled in runtime when the application starts.
 To debug a module, simply attach your debugger to the BattleBitAPIRunner process.
 
