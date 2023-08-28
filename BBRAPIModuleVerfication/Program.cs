@@ -1,4 +1,4 @@
-﻿using BattleBitAPIRunner;
+using BattleBitAPIRunner;
 using BBRAPIModules;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis;
