@@ -37,8 +37,8 @@ namespace BattleBitAPIRunner
         public string ModuleFilePath { get; }
         public Assembly? ModuleAssembly { get; private set; }
 
-        private SyntaxTree syntaxTree;
-        private string code;
+        internal SyntaxTree syntaxTree;
+        internal string code;
 
         public static void UnloadContext()
         {
