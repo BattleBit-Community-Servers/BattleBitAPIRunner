@@ -1,10 +1,34 @@
 ﻿using BattleBitAPIRunner;
+using BBRAPIModules;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis;
 using Newtonsoft.Json;
+using Microsoft.CodeAnalysis.CSharp;
+using System.Text;
 
 namespace BBRAPIModuleVerfication;
 
 internal class Program
 {
+    static string readUntilEOT()
+    {
+        StringBuilder inputBuffer = new StringBuilder();
+        int readByte;
+
+        while ((readByte = Console.Read()) != -1)
+        {
+            if (readByte == 228)//4)
+            {
+                break;
+            }
+
+            char character = (char)readByte;
+            inputBuffer.Append(character);
+        }
+
+        return inputBuffer.ToString();
+    }
+
     static void Main(string[] args)
     {
         if (args.Length != 1)
@@ -38,11 +62,11 @@ internal class Program
             newModules.AddRange(dependencyFiles.Dependencies.Select(x => new Module(x)));
         } while (newModules.Count > 0);
 
-        ModuleDependencyResolver dependencies = new(modules.ToArray());
+        Module[] allModules;
         try
         {
-            
-
+            ModuleDependencyResolver dependencies = new(modules.ToArray());
+            allModules = dependencies.GetDependencyOrder().ToArray();
         }
         catch (Exception e)
         {
@@ -52,8 +76,6 @@ internal class Program
 
         try
         {
-            Module[] allModules = dependencies.GetDependencyOrder().ToArray();
-            
             module.Compile();
         }
         catch (Exception e)
@@ -62,6 +84,8 @@ internal class Program
             return;
         }
     }
+
+
 }
 
 public enum ResponseType
