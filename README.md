@@ -27,7 +27,7 @@ Configure the runner in the `appsettings.json`:
 {
   "IP": "127.0.0.1",
   "Port": 29595,
-  "ModulePath": "./modules",
+  "ModulesPath": "./modules",
   "Modules": [ "C:\\path\\to\\specific\\ModuleFile.cs" ],
   "DependencyPath": "./dependencies",
   "ConfigurationPath": "./configurations",
