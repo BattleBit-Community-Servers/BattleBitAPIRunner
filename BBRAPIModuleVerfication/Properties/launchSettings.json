@@ -2,7 +2,7 @@
   "profiles": {
     "BBRAPIModuleVerfication": {
       "commandName": "Project",
-      "commandLineArgs": "E:\\Create\\Development\\Software\\C#\\BattleBit\\BattleBitBaseModules\\ModeratorTools.cs"
+      "commandLineArgs": "E:\\Create\\Development\\Software\\C#\\BattleBit\\BattleBitBaseModules\\SpectateControl.cs"
     }
   }
 }

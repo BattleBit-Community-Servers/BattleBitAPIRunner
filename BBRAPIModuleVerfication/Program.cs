@@ -5,30 +5,12 @@ using Microsoft.CodeAnalysis;
 using Newtonsoft.Json;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Text;
+using System.Collections.ObjectModel;
 
 namespace BBRAPIModuleVerfication;
 
 internal class Program
 {
-    static string readUntilEOT()
-    {
-        StringBuilder inputBuffer = new StringBuilder();
-        int readByte;
-
-        while ((readByte = Console.Read()) != -1)
-        {
-            if (readByte == 228)//4)
-            {
-                break;
-            }
-
-            char character = (char)readByte;
-            inputBuffer.Append(character);
-        }
-
-        return inputBuffer.ToString();
-    }
-
     static void Main(string[] args)
     {
         if (args.Length != 1)
@@ -39,6 +21,8 @@ internal class Program
 
         string filePath = args[0];
 
+        Module.logToConsole = false;
+
         Module module;
         try
         {
@@ -46,37 +30,41 @@ internal class Program
         }
         catch (Exception e)
         {
-            Console.WriteLine(JsonConvert.SerializeObject(new VerificationResponse(false, null, null, null, null, null, e.Message)));
+            Console.WriteLine(JsonConvert.SerializeObject(new VerificationResponse(false, Path.GetFileNameWithoutExtension(filePath), null, null, null, null, e.Message)));
             return;
         }
 
-        List<Module> modules = new();
-        List<Module> newModules = new() { module };
-        DependencyListResponse dependencyFiles;
-        do
-        {
-            Console.WriteLine(JsonConvert.SerializeObject(new DependencyListResponse() { Dependencies = newModules.SelectMany(m => m.RequiredDependencies).Distinct().ToArray() }));
-            dependencyFiles = JsonConvert.DeserializeObject<DependencyListResponse>(Console.In.ReadToEnd());
-            modules.AddRange(newModules);
-            newModules.Clear();
-            newModules.AddRange(dependencyFiles.Dependencies.Select(x => new Module(x)));
-        } while (newModules.Count > 0);
+        List<string> missingDependencies = new();
+        List<PortableExecutableReference> references = new();
 
-        Module[] allModules;
-        try
+        foreach (string dependency in module.RequiredDependencies)
         {
-            ModuleDependencyResolver dependencies = new(modules.ToArray());
-            allModules = dependencies.GetDependencyOrder().ToArray();
+            if (!Directory.Exists($"./cache/modules/{dependency}"))
+            {
+                missingDependencies.Add(dependency);
+            }
+            else
+            {
+                references.Add(MetadataReference.CreateFromFile($"./cache/modules/{dependency}/{dependency}.dll"));
+            }
         }
-        catch (Exception e)
+
+        if (missingDependencies.Count > 0)
         {
-            Console.WriteLine(JsonConvert.SerializeObject(new VerificationResponse(false, null, null, null, null, null, e.Message)));
+            Console.WriteLine(JsonConvert.SerializeObject(new VerificationResponse(false, module.Name, module.Description, module.Version, module.RequiredDependencies, module.OptionalDependencies, $"Missing dependencies: {string.Join(", ", missingDependencies)}")));
             return;
         }
 
         try
         {
-            module.Compile();
+            module.Compile(references.ToArray());
+            if (!Directory.Exists($"./cache/modules/{module.Name}"))
+            {
+                Directory.CreateDirectory($"./cache/modules/{module.Name}");
+            }
+            File.WriteAllBytes($"./cache/modules/{module.Name}/{module.Name}.dll", module.AssemblyBytes);
+
+            Console.WriteLine(JsonConvert.SerializeObject(new VerificationResponse(true, module.Name, module.Description, module.Version, module.RequiredDependencies, module.OptionalDependencies, null)));
         }
         catch (Exception e)
         {
@@ -88,21 +76,8 @@ internal class Program
 
 }
 
-public enum ResponseType
+internal class VerificationResponse
 {
-    DependencyList,
-    VerificationResult
-}
-
-public interface IResponse
-{
-    public ResponseType ResponseType { get; }
-}
-
-internal class VerificationResponse : IResponse
-{
-    public ResponseType ResponseType => ResponseType.VerificationResult;
-
     public VerificationResponse(bool success, string name, string description, string version, string[] requiredDependencies, string[] optionalDependencies, string errors)
     {
         this.Success = success;
@@ -121,11 +96,4 @@ internal class VerificationResponse : IResponse
     public string[]? RequiredDependencies { get; set; }
     public string[]? OptionalDependencies { get; set; }
     public string? Errors { get; set; }
-}
-
-internal class DependencyListResponse : IResponse
-{
-    public ResponseType ResponseType => ResponseType.DependencyList;
-
-    public string[] Dependencies { get; set; }
 }

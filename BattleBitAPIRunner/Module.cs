@@ -1,4 +1,5 @@
-﻿using BattleBitAPI.Common;
+﻿using BattleBitAPI;
+using BattleBitAPI.Common;
 using BBRAPIModules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -37,6 +38,7 @@ namespace BattleBitAPIRunner
         public string ModuleFilePath { get; }
         public Assembly? ModuleAssembly { get; private set; }
 
+        internal static bool logToConsole = true;
         internal SyntaxTree syntaxTree;
         internal string code;
 
@@ -59,10 +61,13 @@ namespace BattleBitAPIRunner
 
         private void initialize()
         {
-            Console.Write("Parsing module from file ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(Path.GetFileName(this.ModuleFilePath));
-            Console.ResetColor();
+            if (logToConsole)
+            {
+                Console.Write("Parsing module from file ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(Path.GetFileName(this.ModuleFilePath));
+                Console.ResetColor();
+            }
 
             this.code = File.ReadAllText(this.ModuleFilePath);
             this.syntaxTree = CSharpSyntaxTree.ParseText(code, null, this.ModuleFilePath, Encoding.UTF8);
@@ -70,12 +75,15 @@ namespace BattleBitAPIRunner
             this.getDependencies();
             this.getMetadata();
 
-            Console.Write("Module ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write(this.Name);
-            Console.ResetColor();
-            Console.WriteLine($" has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
-            Console.WriteLine();
+            if (logToConsole)
+            {
+                Console.Write("Module ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write(this.Name);
+                Console.ResetColor();
+                Console.WriteLine($" has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
+                Console.WriteLine();
+            }
         }
 
         private void getMetadata()
@@ -155,34 +163,56 @@ namespace BattleBitAPIRunner
             modules.Add(this);
         }
 
-        public void Compile()
+        public void Compile(PortableExecutableReference[]? extraReferences = null)
         {
             if (this.AssemblyBytes is not null)
             {
                 return;
             }
 
-            Console.Write("Compiling module ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(this.Name);
-            Console.ResetColor();
+            if (logToConsole)
+            {
+                Console.Write("Compiling module ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(this.Name);
+                Console.ResetColor();
+            }
 
-            List<PortableExecutableReference> refs = new(AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location)).Select(a => MetadataReference.CreateFromFile(a.Location)));
+            List<PortableExecutableReference> references = new()
+            {
+                MetadataReference.CreateFromFile(typeof(BattleBitModule).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Player<>).Assembly.Location),
+            };
+
+            foreach (string dll in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location), "*.dll"))
+            {
+                if (!IsAssemblyValidReference(dll))
+                {
+                    continue;
+                }
+
+                references.Add(MetadataReference.CreateFromFile(dll));
+            }
+
             foreach (Module module in modules)
             {
                 using (MemoryStream assemblyStream = new(module.AssemblyBytes))
                 {
-                    refs.Add(MetadataReference.CreateFromStream(assemblyStream));
+                    references.Add(MetadataReference.CreateFromStream(assemblyStream));
                 }
             }
-            refs.Add(MetadataReference.CreateFromFile(typeof(DynamicAttribute).Assembly.Location));
-            refs.Add(MetadataReference.CreateFromFile(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException).Assembly.Location));
+            if (extraReferences is not null)
+            {
+                references.AddRange(extraReferences);
+            }
+            references.Add(MetadataReference.CreateFromFile(typeof(DynamicAttribute).Assembly.Location));
+            references.Add(MetadataReference.CreateFromFile(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException).Assembly.Location));
 
             CSharpCompilation compilation = CSharpCompilation.Create(this.Name)
                 .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
                     .WithOptimizationLevel(OptimizationLevel.Debug)
                     .WithPlatform(Platform.AnyCpu))
-                .WithReferences(refs)
+                .WithReferences(references)
                 .AddSyntaxTrees(this.syntaxTree);
 
             using (MemoryStream assemblyStream = new())
@@ -205,6 +235,32 @@ namespace BattleBitAPIRunner
 
                 pdbStream.Seek(0, SeekOrigin.Begin);
                 this.PDBBytes = pdbStream.ToArray();
+            }
+        }
+
+        private static bool IsAssemblyValidReference(string assemblyPath)
+        {
+            try
+            {
+                string code = "class Program { static void Main() { } }";
+
+                SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(code);
+                CSharpCompilation compilation = CSharpCompilation.Create(
+                    "TempAssembly",
+                    syntaxTrees: new[] { syntaxTree },
+                    references: new[] { MetadataReference.CreateFromFile(assemblyPath), MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
+                    options: new CSharpCompilationOptions(OutputKind.ConsoleApplication));
+
+                using (var ms = new MemoryStream())
+                {
+                    EmitResult result = compilation.Emit(ms);
+
+                    return result.Success;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
     }
