@@ -37,6 +37,7 @@ namespace BattleBitAPIRunner
         public string ModuleFilePath { get; }
         public Assembly? ModuleAssembly { get; private set; }
 
+        internal static bool logToConsole = true;
         internal SyntaxTree syntaxTree;
         internal string code;
 
@@ -59,10 +60,13 @@ namespace BattleBitAPIRunner
 
         private void initialize()
         {
-            Console.Write("Parsing module from file ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(Path.GetFileName(this.ModuleFilePath));
-            Console.ResetColor();
+            if (logToConsole)
+            {
+                Console.Write("Parsing module from file ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(Path.GetFileName(this.ModuleFilePath));
+                Console.ResetColor();
+            }
 
             this.code = File.ReadAllText(this.ModuleFilePath);
             this.syntaxTree = CSharpSyntaxTree.ParseText(code, null, this.ModuleFilePath, Encoding.UTF8);
@@ -70,12 +74,15 @@ namespace BattleBitAPIRunner
             this.getDependencies();
             this.getMetadata();
 
-            Console.Write("Module ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write(this.Name);
-            Console.ResetColor();
-            Console.WriteLine($" has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
-            Console.WriteLine();
+            if (logToConsole)
+            {
+                Console.Write("Module ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write(this.Name);
+                Console.ResetColor();
+                Console.WriteLine($" has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
+                Console.WriteLine();
+            }
         }
 
         private void getMetadata()
@@ -162,10 +169,14 @@ namespace BattleBitAPIRunner
                 return;
             }
 
-            Console.Write("Compiling module ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(this.Name);
-            Console.ResetColor();
+            if (logToConsole)
+            {
+                Console.Write("Compiling module ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(this.Name);
+                Console.ResetColor();
+            }
+
             List<PortableExecutableReference> references = new()
             {
                 MetadataReference.CreateFromFile(typeof(BattleBitModule).Assembly.Location),
