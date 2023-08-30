@@ -37,6 +37,8 @@ namespace BattleBitAPIRunner
             startServerListener();
 
             consoleCommandHandler();
+
+            Thread.Sleep(-1);
         }
 
         private void fileWatchers()
@@ -125,10 +127,21 @@ namespace BattleBitAPIRunner
 
         private void consoleCommandHandler()
         {
+            if (Console.In is null)
+            {
+                Console.WriteLine("No std in stream available.");
+                return;
+            }
+
             // TODO: Make proper console handler ncurses style (separate line for input, rest of window for output)
             while (true)
             {
-                string command = Console.ReadLine();
+                string? command = Console.ReadLine();
+                if (command is null)
+                {
+                    Console.WriteLine("No std in stream available.");
+                    return;
+                }
 
                 string[] commandParts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (commandParts.Length == 0)
