@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
 
-ARG BB_RUNNER_VERSION=0.4.9
+ARG BB_RUNNER_VERSION=0.4.10
 
 WORKDIR /app
 
