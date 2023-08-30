@@ -519,6 +519,11 @@ namespace BattleBitAPIRunner
 
         private void loadConfiguration()
         {
+            if (!File.Exists("appsettings.json"))
+            {
+                File.WriteAllText("appsettings.json", JsonConvert.SerializeObject(this.configuration));
+            }
+
             new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json")

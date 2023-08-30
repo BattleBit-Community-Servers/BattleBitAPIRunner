@@ -12,10 +12,10 @@ namespace BattleBitAPIRunner
     internal class ServerConfiguration
     {
         [Required]
-        public string? IP { get; set; }
+        public string? IP { get; set; } = "127.0.0.1";
 
         [Required]
-        public int? Port { get; set; }
+        public int? Port { get; set; } = 29294;
 
         public IPAddress? IPAddress { get; set; }
 
