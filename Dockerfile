@@ -30,4 +30,6 @@ RUN mkdir -p data/modules data/dependencies data/configurations\
 
 USER $UID:$GID
 
+VOLUME ["/app/data"]
+
 CMD ["dotnet", "BattleBitAPIRunner.dll"]
