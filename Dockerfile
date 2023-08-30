@@ -15,8 +15,19 @@ RUN wget -q https://github.com/BattleBit-Community-Servers/BattleBitAPIRunner/re
 
 FROM mcr.microsoft.com/dotnet/runtime:6.0 AS app
 
+ARG UNAME=bbr
+ARG UID=1000
+ARG GID=1000
+
+RUN groupadd -g $GID -o $UNAME \
+    && useradd -l -u $UID -g $GID -o -s /bin/bash $UNAME
+
 WORKDIR /app
-COPY --from=base /app /app
-COPY docker/appsettings.json /app/appsettings.json
+COPY --from=base --chown=$UID:$GID /app /app
+COPY --chown=$UID:$GID docker/appsettings.json /app/appsettings.json
+RUN mkdir -p data/modules data/dependencies data/configurations\
+    && chown -R $UID:$GID /app
+
+USER $UID:$GID
 
 CMD ["dotnet", "BattleBitAPIRunner.dll"]
