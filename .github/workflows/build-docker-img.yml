@@ -8,6 +8,7 @@ on:
     paths:
       - "docker/**"
       - "Dockerfile"
+      - ".github/workflows/build-docker-img.yml"
 
 jobs:
   build-docker-img:
