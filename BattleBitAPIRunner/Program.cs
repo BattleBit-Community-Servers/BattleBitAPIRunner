@@ -534,7 +534,7 @@ namespace BattleBitAPIRunner
         {
             if (!File.Exists("appsettings.json"))
             {
-                File.WriteAllText("appsettings.json", JsonConvert.SerializeObject(this.configuration));
+                File.WriteAllText("appsettings.json", JsonConvert.SerializeObject(this.configuration, Formatting.Indented));
             }
 
             new ConfigurationBuilder()

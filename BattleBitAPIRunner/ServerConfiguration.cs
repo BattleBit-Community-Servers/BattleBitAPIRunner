@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace BattleBitAPIRunner
@@ -17,6 +18,7 @@ namespace BattleBitAPIRunner
         [Required]
         public int? Port { get; set; } = 29294;
 
+        [JsonIgnore]
         public IPAddress? IPAddress { get; set; }
 
         public string ModulesPath { get; set; } = "./modules";
