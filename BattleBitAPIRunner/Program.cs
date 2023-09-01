@@ -77,6 +77,29 @@ namespace BattleBitAPIRunner
                     {
                         try
                         {
+                            // Try compile changed modules before unloading old ones
+                            foreach (string moduleFile in changedModules.ToArray())
+                            {
+                                Module? changedModule = null;
+                                try
+                                {
+                                    changedModule = new(moduleFile);
+                                    changedModule.Compile();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine($"Could not hot reload module {changedModule?.Name ?? Path.GetFileNameWithoutExtension(moduleFile)}:{Environment.NewLine}{ex}{Environment.NewLine}Running module will be kept.");
+                                    Console.ResetColor();
+                                    changedModules.Remove(moduleFile);
+                                }
+                            }
+
+                            if (!changedModules.Any())
+                            {
+                                continue;
+                            }
+
                             unloadModules();
 
                             foreach (string moduleFile in changedModules)
@@ -192,11 +215,27 @@ namespace BattleBitAPIRunner
                         }
 
                         string moduleName = commandParts[1];
+
                         Module? moduleToLoad = Module.Modules.FirstOrDefault(m => m.Name.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
+
                         if (moduleToLoad is null)
                         {
                             Console.ForegroundColor = ConsoleColor.Red;
                             Console.WriteLine($"Module {moduleName} not found.");
+                            Console.ResetColor();
+                            break;
+                        }
+
+                        Module? loadedModule = null;
+                        try
+                        {
+                            loadedModule = new(moduleToLoad.ModuleFilePath);
+                            loadedModule.Compile();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"Could not hot reload module {loadedModule?.Name ?? moduleToLoad.Name}:{Environment.NewLine}{ex}{Environment.NewLine}Running module will be kept.");
                             Console.ResetColor();
                             break;
                         }
