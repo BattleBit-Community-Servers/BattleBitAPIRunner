@@ -22,5 +22,5 @@ public class LoadingScreenText : BattleBitModule
 
 public class LoadingScreenTextConfiguration : ModuleConfiguration
 {
-    public string LoadingScreenText { get; set; } = "This is a community server!";
+    public string LoadingScreenText { get; set; } = "DaGameroom is under construction!";
 }
