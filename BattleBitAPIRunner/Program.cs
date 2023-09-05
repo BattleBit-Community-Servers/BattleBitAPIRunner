@@ -1,6 +1,7 @@
 ﻿using BattleBitAPI.Common;
 using BattleBitAPI.Server;
 using BBRAPIModules;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -77,6 +78,29 @@ namespace BattleBitAPIRunner
                     {
                         try
                         {
+                            // Try compile changed modules before unloading old ones
+                            foreach (string moduleFile in changedModules.ToArray())
+                            {
+                                Module? changedModule = null;
+                                try
+                                {
+                                    changedModule = new(moduleFile);
+                                    changedModule.Compile(this.binaryDependencies);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine($"Could not hot reload module {changedModule?.Name ?? Path.GetFileNameWithoutExtension(moduleFile)}:{Environment.NewLine}{ex}{Environment.NewLine}Running module will be kept.");
+                                    Console.ResetColor();
+                                    changedModules.Remove(moduleFile);
+                                }
+                            }
+
+                            if (!changedModules.Any())
+                            {
+                                continue;
+                            }
+
                             unloadModules();
 
                             foreach (string moduleFile in changedModules)
@@ -119,11 +143,19 @@ namespace BattleBitAPIRunner
                 Directory.CreateDirectory(this.configuration.DependencyPath);
             }
 
+            List<PortableExecutableReference> binaryDependencies = new();
+
             foreach (string dependency in Directory.GetFiles(this.configuration.DependencyPath, "*.dll"))
             {
-                Assembly.LoadFrom(dependency);
+                binaryDependencies.Add(MetadataReference.CreateFromFile(dependency));
             }
+
+            this.binaryDependencies = binaryDependencies.ToArray();
+
+            Module.LoadDependencies(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
         }
+
+        private PortableExecutableReference[] binaryDependencies = Array.Empty<PortableExecutableReference>();
 
         private void consoleCommandHandler()
         {
@@ -192,11 +224,27 @@ namespace BattleBitAPIRunner
                         }
 
                         string moduleName = commandParts[1];
+
                         Module? moduleToLoad = Module.Modules.FirstOrDefault(m => m.Name.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
+
                         if (moduleToLoad is null)
                         {
                             Console.ForegroundColor = ConsoleColor.Red;
                             Console.WriteLine($"Module {moduleName} not found.");
+                            Console.ResetColor();
+                            break;
+                        }
+
+                        Module? loadedModule = null;
+                        try
+                        {
+                            loadedModule = new(moduleToLoad.ModuleFilePath);
+                            loadedModule.Compile(this.binaryDependencies);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"Could not hot reload module {loadedModule?.Name ?? moduleToLoad.Name}:{Environment.NewLine}{ex}{Environment.NewLine}Running module will be kept.");
                             Console.ResetColor();
                             break;
                         }
@@ -235,6 +283,7 @@ namespace BattleBitAPIRunner
             }
 
             Module.UnloadContext();
+            Module.LoadDependencies(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
         }
 
         private void loadModules()
@@ -303,7 +352,7 @@ namespace BattleBitAPIRunner
 
                     if (module.AssemblyBytes is null)
                     {
-                        module.Compile();
+                        module.Compile(this.binaryDependencies);
                         compiledModuleCount++;
                     }
 
