@@ -31,6 +31,7 @@ namespace BattleBitAPIRunner
         {
             loadConfiguration();
             validateConfiguration();
+            Console.WriteLine("Loading dependencies...");
             loadDependencies();
             loadModules();
             hookModules();
@@ -152,7 +153,7 @@ namespace BattleBitAPIRunner
 
             this.binaryDependencies = binaryDependencies.ToArray();
 
-            Module.LoadDependencies(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
+            Module.LoadContext(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
         }
 
         private PortableExecutableReference[] binaryDependencies = Array.Empty<PortableExecutableReference>();
@@ -283,7 +284,7 @@ namespace BattleBitAPIRunner
             }
 
             Module.UnloadContext();
-            Module.LoadDependencies(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
+            Module.LoadContext(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
         }
 
         private void loadModules()

@@ -36,7 +36,17 @@ namespace BattleBitAPIRunner
         private SyntaxTree syntaxTree;
         private string code;
 
-        public static void LoadDependencies(string[] dependencies)
+        public static void LoadContext(string[] dependencies)
+        {
+            if (baseReferences is null)
+            {
+                loadReferences(dependencies);
+            }
+
+            loadDepedencies(dependencies);
+        }
+
+        private static void loadReferences(string[] dependencies)
         {
             List<PortableExecutableReference> references = new()
             {
@@ -46,19 +56,30 @@ namespace BattleBitAPIRunner
 
             foreach (string dll in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location), "*.dll"))
             {
+
                 if (!IsAssemblyValidReference(dll))
                 {
                     continue;
                 }
 
                 references.Add(MetadataReference.CreateFromFile(dll));
-                moduleContext.LoadFromAssemblyPath(Path.GetFullPath(dll));
+
             }
 
             foreach (string dependency in dependencies)
             {
-                moduleContext.LoadFromAssemblyPath(Path.GetFullPath(dependency));
+
                 references.Add(MetadataReference.CreateFromFile(Path.GetFullPath(dependency)));
+            }
+
+            baseReferences = references.ToArray();
+        }
+
+        private static void loadDepedencies(string[] dependencies)
+        {
+            foreach (string dependency in dependencies)
+            {
+                moduleContext.LoadFromAssemblyPath(Path.GetFullPath(dependency));
             }
         }
 
@@ -159,7 +180,7 @@ namespace BattleBitAPIRunner
             modules.Add(this);
         }
 
-        public static List<PortableExecutableReference> baseReferences = new();
+        public static PortableExecutableReference[]? baseReferences = null;
 
         public void Compile(PortableExecutableReference[]? extraReferences = null)
         {
