@@ -1,6 +1,7 @@
 ﻿using BattleBitAPI.Common;
 using BattleBitAPI.Server;
 using BBRAPIModules;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -84,7 +85,7 @@ namespace BattleBitAPIRunner
                                 try
                                 {
                                     changedModule = new(moduleFile);
-                                    changedModule.Compile();
+                                    changedModule.Compile(this.binaryDependencies);
                                 }
                                 catch (Exception ex)
                                 {
@@ -142,11 +143,19 @@ namespace BattleBitAPIRunner
                 Directory.CreateDirectory(this.configuration.DependencyPath);
             }
 
+            List<PortableExecutableReference> binaryDependencies = new();
+
             foreach (string dependency in Directory.GetFiles(this.configuration.DependencyPath, "*.dll"))
             {
-                Assembly.LoadFrom(dependency);
+                binaryDependencies.Add(MetadataReference.CreateFromFile(dependency));
             }
+
+            this.binaryDependencies = binaryDependencies.ToArray();
+
+            Module.LoadDependencies(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
         }
+
+        private PortableExecutableReference[] binaryDependencies = Array.Empty<PortableExecutableReference>();
 
         private void consoleCommandHandler()
         {
@@ -230,7 +239,7 @@ namespace BattleBitAPIRunner
                         try
                         {
                             loadedModule = new(moduleToLoad.ModuleFilePath);
-                            loadedModule.Compile();
+                            loadedModule.Compile(this.binaryDependencies);
                         }
                         catch (Exception ex)
                         {
@@ -274,6 +283,7 @@ namespace BattleBitAPIRunner
             }
 
             Module.UnloadContext();
+            Module.LoadDependencies(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
         }
 
         private void loadModules()
@@ -342,7 +352,7 @@ namespace BattleBitAPIRunner
 
                     if (module.AssemblyBytes is null)
                     {
-                        module.Compile();
+                        module.Compile(this.binaryDependencies);
                         compiledModuleCount++;
                     }
 

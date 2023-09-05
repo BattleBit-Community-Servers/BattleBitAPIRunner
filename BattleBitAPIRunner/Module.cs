@@ -36,6 +36,14 @@ namespace BattleBitAPIRunner
         private SyntaxTree syntaxTree;
         private string code;
 
+        public static void LoadDependencies(string[] dependencies)
+        {
+            foreach (string dependency in dependencies)
+            {
+                moduleContext.LoadFromAssemblyPath(Path.GetFullPath(dependency));
+            }
+        }
+
         public static void UnloadContext()
         {
             moduleContext.Unload();
