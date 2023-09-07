@@ -31,6 +31,7 @@ namespace BattleBitAPIRunner
         {
             loadConfiguration();
             validateConfiguration();
+            Console.WriteLine("Loading dependencies...");
             loadDependencies();
             loadModules();
             hookModules();
@@ -152,7 +153,7 @@ namespace BattleBitAPIRunner
 
             this.binaryDependencies = binaryDependencies.ToArray();
 
-            Module.LoadDependencies(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
+            Module.LoadContext(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
         }
 
         private PortableExecutableReference[] binaryDependencies = Array.Empty<PortableExecutableReference>();
@@ -283,7 +284,7 @@ namespace BattleBitAPIRunner
             }
 
             Module.UnloadContext();
-            Module.LoadDependencies(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
+            Module.LoadContext(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
         }
 
         private void loadModules()
@@ -554,6 +555,15 @@ namespace BattleBitAPIRunner
             if (File.Exists(filePath))
             {
                 configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType) as ModuleConfiguration;
+                if (configurationValue is null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Failed to load configuration {property.Name} for module {module.GetType().Name}.");
+                    Console.ResetColor();
+
+                    module.Unload();
+                    return;
+                }
                 configurationValue.Initialize(module, property, serverName);
                 configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
                 configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;

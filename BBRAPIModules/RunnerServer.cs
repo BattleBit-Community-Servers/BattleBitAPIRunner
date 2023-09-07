@@ -48,7 +48,7 @@ namespace BBRAPIModules
             {
                 try
                 {
-                    stopwatch.Start();
+                    stopwatch.Restart();
                     bool moduleResult = await (Task<bool>)typeof(BattleBitModule).GetMethod(method).Invoke(module, parameters);
 
                     if (!moduleResult)
@@ -81,7 +81,7 @@ namespace BBRAPIModules
             {
                 try
                 {
-                    stopwatch.Start();
+                    stopwatch.Restart();
                     OnPlayerSpawnArguments? moduleResult = await (Task<OnPlayerSpawnArguments?>)typeof(BattleBitModule).GetMethod(method).Invoke(module, new object?[] { player, previousValidSpawnArguments });
 
                     if (moduleResult is not null)
@@ -121,7 +121,7 @@ namespace BBRAPIModules
             {
                 try
                 {
-                    stopwatch.Start();
+                    stopwatch.Restart();
                     await (Task)typeof(BattleBitModule).GetMethod(method).Invoke(module, parameters);
                 }
                 catch (Exception ex)

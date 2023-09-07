@@ -36,7 +36,46 @@ namespace BattleBitAPIRunner
         private SyntaxTree syntaxTree;
         private string code;
 
-        public static void LoadDependencies(string[] dependencies)
+        public static void LoadContext(string[] dependencies)
+        {
+            if (baseReferences is null)
+            {
+                loadReferences(dependencies);
+            }
+
+            loadDepedencies(dependencies);
+        }
+
+        private static void loadReferences(string[] dependencies)
+        {
+            List<PortableExecutableReference> references = new()
+            {
+                MetadataReference.CreateFromFile(typeof(BattleBitModule).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Player<>).Assembly.Location),
+            };
+
+            foreach (string dll in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location), "*.dll"))
+            {
+
+                if (!IsAssemblyValidReference(dll))
+                {
+                    continue;
+                }
+
+                references.Add(MetadataReference.CreateFromFile(dll));
+
+            }
+
+            foreach (string dependency in dependencies)
+            {
+
+                references.Add(MetadataReference.CreateFromFile(Path.GetFullPath(dependency)));
+            }
+
+            baseReferences = references.ToArray();
+        }
+
+        private static void loadDepedencies(string[] dependencies)
         {
             foreach (string dependency in dependencies)
             {
@@ -141,6 +180,8 @@ namespace BattleBitAPIRunner
             modules.Add(this);
         }
 
+        public static PortableExecutableReference[]? baseReferences = null;
+
         public void Compile(PortableExecutableReference[]? extraReferences = null)
         {
             if (this.AssemblyBytes is not null)
@@ -152,21 +193,7 @@ namespace BattleBitAPIRunner
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(this.Name);
             Console.ResetColor();
-            List<PortableExecutableReference> references = new()
-            {
-                MetadataReference.CreateFromFile(typeof(BattleBitModule).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Player<>).Assembly.Location),
-            };
-
-            foreach (string dll in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location), "*.dll"))
-            {
-                if (!IsAssemblyValidReference(dll))
-                {
-                    continue;
-                }
-
-                references.Add(MetadataReference.CreateFromFile(dll));
-            }
+            List<PortableExecutableReference> references = new(baseReferences);
 
             foreach (Module module in modules)
             {
@@ -175,12 +202,11 @@ namespace BattleBitAPIRunner
                     references.Add(MetadataReference.CreateFromStream(assemblyStream));
                 }
             }
+
             if (extraReferences is not null)
             {
                 references.AddRange(extraReferences);
             }
-            references.Add(MetadataReference.CreateFromFile(typeof(DynamicAttribute).Assembly.Location));
-            references.Add(MetadataReference.CreateFromFile(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException).Assembly.Location));
 
             CSharpCompilation compilation = CSharpCompilation.Create(this.Name)
                 .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
