@@ -555,6 +555,15 @@ namespace BattleBitAPIRunner
             if (File.Exists(filePath))
             {
                 configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType) as ModuleConfiguration;
+                if (configurationValue is null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Failed to load configuration {property.Name} for module {module.GetType().Name}.");
+                    Console.ResetColor();
+
+                    module.Unload();
+                    return;
+                }
                 configurationValue.Initialize(module, property, serverName);
                 configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
                 configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
