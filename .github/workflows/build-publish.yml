@@ -50,7 +50,7 @@ jobs:
       id: generate-changelog
       run: |
         tag_name="${{ steps.extract-tag-name.outputs.tag_name }}"
-        previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
+        previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=2 --max-count=1))
         echo Previous tag is $previous_tag
         changelog=$(git log --pretty=format:"- %s" $previous_tag..$tag_name)
         echo "THE CHANGE LOG IS"
