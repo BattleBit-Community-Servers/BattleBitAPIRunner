@@ -33,6 +33,14 @@ jobs:
     - name: Create NuGet package
       run: dotnet pack BBRAPIModules/BBRAPIModules.csproj --configuration Release --output ./nuget
 
+    - name: Generate changelog
+      id: generate-changelog
+      run: |
+        tag_name="${{ github.ref }}"
+        previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
+        changelog=$(git log --pretty=format:"- %s" $previous_tag..$tag_name)
+        echo "::set-output name=changelog::$changelog"
+        
     - name: Publish Release Assets
       id: publish-assets
       uses: softprops/action-gh-release@v1
@@ -40,29 +48,8 @@ jobs:
         files: |
           publish/*
           nuget/*.nupkg
-        tag: ${{ github.ref }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Create Release with Changelog
-      id: create-release
-      run: |
-        tag_name="${{ github.ref }}"
-        release_name="${{ github.ref }}"
-        previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
-        changelog=$(git log --pretty=format:"- %s" $previous_tag..$tag_name)
-    
-        body="Release ${{ github.ref }} Changelog:\n\n$changelog"
-        curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          "https://api.github.com/repos/${{ github.repository }}/releases" \
-          -d '{
-            "tag_name": "'"${tag_name}"'",
-            "name": "'"${release_name}"'",
-            "body": "'"${body}"'",
-            "draft": false,
-            "prerelease": false
-          }'      
+        tag_name: ${{ github.ref }}
+        body: ${{ steps.generate-changelog.outputs.changelog }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
