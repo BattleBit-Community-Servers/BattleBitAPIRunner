@@ -1,0 +1,80 @@
+name: Build and Publish
+
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - '*'
+
+jobs:
+  build-publish-on-main:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.x
+
+    - name: Build and Publish project
+      run: dotnet publish BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release -o ./publish
+
+    - name: Build nuget
+      run: dotnet build BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release
+
+    - name: Create NuGet package
+      run: dotnet pack BBRAPIModules/BBRAPIModules.csproj --no-build --output ./nuget
+
+    - name: Publish Release Assets
+      id: publish-assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          publish/*
+          nuget/*.nupkg
+        tag: ${{ github.ref }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release with Changelog
+      id: create-release
+      run: |
+        tag_name="${{ github.ref }}"
+        release_name="${{ github.ref }}"
+        previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
+        changelog=$(git log --pretty=format:"- %s" $previous_tag..$tag_name)
+    
+        body="Release ${{ github.ref }} Changelog:\n\n$changelog"
+        curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          "https://api.github.com/repos/${{ github.repository }}/releases" \
+          -d '{
+            "tag_name": "'"${tag_name}"'",
+            "name": "'"${release_name}"'",
+            "body": "'"${body}"'",
+            "draft": false,
+            "prerelease": false
+          }'      
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-check-on-commits:
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.x # Updated to use .NET 6.0
+
+    - name: Build project and check for errors on non-main branch commits
+      run: dotnet build --configuration Release --no-restore
