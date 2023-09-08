@@ -28,13 +28,13 @@ namespace BattleBitAPIRunner
         public string? Name { get; private set; }
         public string[]? RequiredDependencies { get; private set; }
         public string[]? OptionalDependencies { get; private set; }
-        public byte[] AssemblyBytes { get; private set; }
-        public byte[] PDBBytes { get; private set; }
+        public byte[] AssemblyBytes { get; private set; } = null!;
+        public byte[] PDBBytes { get; private set; } = null!;
         public string ModuleFilePath { get; }
         public Assembly? ModuleAssembly { get; private set; }
 
-        private SyntaxTree syntaxTree;
-        private string code;
+        private SyntaxTree syntaxTree = null!;
+        private string code = null!;
 
         public static void LoadContext(string[] dependencies)
         {
@@ -54,7 +54,7 @@ namespace BattleBitAPIRunner
                 MetadataReference.CreateFromFile(typeof(Player<>).Assembly.Location),
             };
 
-            foreach (string dll in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location), "*.dll"))
+            foreach (string dll in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location)!, "*.dll"))
             {
 
                 if (!IsAssemblyValidReference(dll))
@@ -120,7 +120,7 @@ namespace BattleBitAPIRunner
             Console.ForegroundColor = ConsoleColor.White;
             Console.Write(this.Name);
             Console.ResetColor();
-            Console.WriteLine($" has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
+            Console.WriteLine($" has {this.RequiredDependencies!.Length} required and {this.OptionalDependencies!.Length} optional dependencies");
             Console.WriteLine();
         }
 
@@ -129,10 +129,10 @@ namespace BattleBitAPIRunner
             IEnumerable<AttributeSyntax> attributeSyntaxes = syntaxTree.GetRoot().DescendantNodes().OfType<AttributeSyntax>();
             IEnumerable<AttributeSyntax> requireModuleAttributes = attributeSyntaxes.Where(x => x.Name.ToString() + "Attribute" == nameof(RequireModuleAttribute));
             IEnumerable<AttributeSyntax> publicRequireModuleAttributes = requireModuleAttributes.Where(x => x.Parent?.Parent is ClassDeclarationSyntax classDeclarationSyntax && classDeclarationSyntax.Modifiers.Any(x => x.ToString() == "public"));
-            IEnumerable<string> requiredModuleTypes = publicRequireModuleAttributes.Select(x => x.ArgumentList?.Arguments.FirstOrDefault()?.Expression.ToString().Trim('"')[6..].Trim('(', ')').Split('.').Last()).Where(x => !string.IsNullOrWhiteSpace(x));
+            IEnumerable<string> requiredModuleTypes = publicRequireModuleAttributes.Select(x => x.ArgumentList?.Arguments.FirstOrDefault()?.Expression.ToString().Trim('"')[6..].Trim('(', ')').Split('.').Last()).Where(x => !string.IsNullOrWhiteSpace(x)).Select(s => s!);
             IEnumerable<AttributeSyntax> moduleReferenceAttributes = attributeSyntaxes.Where(x => x.Name.ToString() + "Attribute" == nameof(ModuleReferenceAttribute));
             IEnumerable<AttributeSyntax> publicModuleReferenceAttributes = moduleReferenceAttributes.Where(x => x.Parent?.Parent is PropertyDeclarationSyntax propertyDeclarationSyntax && propertyDeclarationSyntax.Modifiers.Any(x => x.ToString() == "public"));
-            IEnumerable<string> optionalModuleTypes = publicModuleReferenceAttributes.Select(x => (x.Parent?.Parent as PropertyDeclarationSyntax).Identifier.ValueText);
+            IEnumerable<string> optionalModuleTypes = publicModuleReferenceAttributes.Select(x => (x.Parent?.Parent as PropertyDeclarationSyntax)!.Identifier.ValueText);
 
             this.RequiredDependencies = requiredModuleTypes.ToArray();
             this.OptionalDependencies = optionalModuleTypes.Where(m => !this.RequiredDependencies.Contains(m)).ToArray();
@@ -197,7 +197,7 @@ namespace BattleBitAPIRunner
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(this.Name);
             Console.ResetColor();
-            List<PortableExecutableReference> references = new(baseReferences);
+            List<PortableExecutableReference> references = new(baseReferences!);
 
             foreach (Module module in modules)
             {
