@@ -110,6 +110,10 @@ namespace BattleBitAPIRunner
             this.code = File.ReadAllText(this.ModuleFilePath);
             this.syntaxTree = CSharpSyntaxTree.ParseText(code, null, this.ModuleFilePath, Encoding.UTF8);
             this.Name = this.getName();
+            if (Path.GetFileNameWithoutExtension(this.ModuleFilePath) != this.Name)
+            {
+                throw new Exception($"Module {Path.GetFileName(this.ModuleFilePath)} does not have the same name as the class that inherits from {nameof(BattleBitModule)}");
+            }
             this.getDependencies();
 
             Console.Write("Module ");
