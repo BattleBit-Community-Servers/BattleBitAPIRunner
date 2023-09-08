@@ -54,7 +54,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          publish/*
+          $(basename ${{ github.ref }}).zip
           nuget/*.nupkg
         tag_name: $(basename ${{ github.ref }})
         body: ${{ steps.generate-changelog.outputs.changelog }}
