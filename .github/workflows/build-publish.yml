@@ -36,10 +36,15 @@ jobs:
     - name: Create NuGet package
       run: dotnet pack BBRAPIModules/BBRAPIModules.csproj --configuration Release --output ./nuget
 
+    - name: Zip Published Files
+      run: |
+        find ./publish -type f ! -name '*.pdb' -exec zip -r ./$(basename ${{ github.ref }}).zip {} \;
+    
+
     - name: Generate changelog
       id: generate-changelog
       run: |
-        tag_name="${{ github.ref }}"
+        tag_name="$(basename ${{ github.ref }})"
         previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
         changelog=$(git log --pretty=format:"- %s" $previous_tag..$tag_name)
         echo "::set-output name=changelog::$changelog"
@@ -51,7 +56,7 @@ jobs:
         files: |
           publish/*
           nuget/*.nupkg
-        tag_name: ${{ github.ref }}
+        tag_name: $(basename ${{ github.ref }})
         body: ${{ steps.generate-changelog.outputs.changelog }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
