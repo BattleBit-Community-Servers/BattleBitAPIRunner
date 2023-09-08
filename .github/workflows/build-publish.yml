@@ -31,7 +31,7 @@ jobs:
       run: dotnet build BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release
 
     - name: Create NuGet package
-      run: dotnet pack BBRAPIModules/BBRAPIModules.csproj --no-build --output ./nuget
+      run: dotnet pack BBRAPIModules/BBRAPIModules.csproj --configuration Release --output ./nuget
 
     - name: Publish Release Assets
       id: publish-assets
