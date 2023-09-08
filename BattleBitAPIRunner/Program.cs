@@ -289,15 +289,16 @@ namespace BattleBitAPIRunner
 
         private void loadModules()
         {
-            Module[] modules = Directory.GetFiles(this.configuration.ModulesPath, "*.cs").Union(this.configuration.Modules).Where(f => Module.Modules.All(m => m.Name != Path.GetFileNameWithoutExtension(f))).Select(m =>
+            string[] moduleFiles = Directory.GetFiles(this.configuration.ModulesPath, "*.cs").Union(this.configuration.Modules).ToArray();
+            Module[] modules = moduleFiles.Where(f => Module.Modules.All(m => m.Name != Path.GetFileNameWithoutExtension(f))).Select(m =>
             {
                 try { return new Module(m); }
                 catch (Exception ex)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Failed to load module {Path.GetFileName(m)}");
-                    Console.ResetColor();
                     Console.WriteLine(ex.ToString());
+                    Console.ResetColor();
                     return null;
                 }
             }).Where(m => m is not null).Select(m => m!).Union(Module.Modules).ToArray();
@@ -307,14 +308,14 @@ namespace BattleBitAPIRunner
                 Module.RemoveModule(toRemove);
             }
 
-            foreach (Module toWatch in modules)
+            foreach (string toWatch in moduleFiles)
             {
-                if (this.watchedFiles.ContainsKey(toWatch.ModuleFilePath))
+                if (this.watchedFiles.ContainsKey(toWatch))
                 {
                     continue;
                 }
 
-                this.watchedFiles.Add(toWatch.ModuleFilePath, (CalculateFileHash(new FileInfo(toWatch.ModuleFilePath)), File.GetLastWriteTime(toWatch.ModuleFilePath)));
+                this.watchedFiles.Add(toWatch, (CalculateFileHash(new FileInfo(toWatch)), File.GetLastWriteTime(toWatch)));
             }
 
             Module[][] duplicateModules = modules.GroupBy(m => m.Name).Where(g => g.Count() > 1).Select(g => g.ToArray()).ToArray();
