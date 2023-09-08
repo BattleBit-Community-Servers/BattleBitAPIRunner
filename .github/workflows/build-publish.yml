@@ -52,6 +52,9 @@ jobs:
         tag_name="${{ steps.extract-tag-name.outputs.tag_name }}"
         previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
         changelog=$(git log --pretty=format:"- %s" $previous_tag..$tag_name)
+        echo "THE CHANGE LOG IS"
+        echo $changelog
+        echo "END OF CHANGELOG"
         echo "$changelog" >> ${{ github.workspace }}-CHANGELOG.txt
         
     - name: Publish Release Assets
