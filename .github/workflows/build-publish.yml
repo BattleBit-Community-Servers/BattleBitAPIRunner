@@ -19,9 +19,7 @@ jobs:
     - name: Extract Tag Name
       id: extract-tag-name
       run: |
-        echo "{tag_name}={$(basename ${{ github.ref }})}" >> $GITHUB_OUTPUT
-        echo $(basename ${{ github.ref }})
-        echo $GITHUB_OUTPUT
+        echo "tag_name=$(basename ${{ github.ref }})" >> $GITHUB_OUTPUT
 
     - name: Checkout code
       uses: actions/checkout@v4
@@ -54,7 +52,7 @@ jobs:
         tag_name="${{ steps.extract-tag-name.outputs.tag_name }}"
         previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
         changelog=$(git log --pretty=format:"- %s" $previous_tag..$tag_name)
-        echo "{changelog}={$changelog}" >> $GITHUB_OUTPUT
+        echo "$changelog" >> ${{ github.workspace }}-CHANGELOG.txt
         
     - name: Publish Release Assets
       id: publish-assets
@@ -64,7 +62,7 @@ jobs:
           ${{ steps.extract-tag-name.outputs.tag_name }}.zip
           nuget/*.nupkg
         tag_name: ${{ steps.extract-tag-name.outputs.tag_name }}
-        body: ${{ steps.generate-changelog.outputs.changelog }}
+        body_path: ${{ github.workspace }}-CHANGELOG.txt
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
