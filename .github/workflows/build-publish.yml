@@ -26,27 +26,27 @@ jobs:
       with:
         fetch-depth: 0
 
-    # - name: Set up .NET Core
-    #   uses: actions/setup-dotnet@v3.0.3
-    #   with:
-    #     dotnet-version: 6
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v3.0.3
+      with:
+        dotnet-version: 6
 
-    # - name: NuGet Restore
-    #   run: dotnet restore
+    - name: NuGet Restore
+      run: dotnet restore
 
-    # - name: Build and Publish project
-    #   run: dotnet publish BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release -o ./publish
+    - name: Build and Publish project
+      run: dotnet publish BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release -o ./publish
 
-    # - name: Build nuget
-    #   run: dotnet build BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release
+    - name: Build nuget
+      run: dotnet build BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release
 
-    # - name: Create NuGet package
-    #   run: dotnet pack BBRAPIModules/BBRAPIModules.csproj --configuration Release --output ./nuget
+    - name: Create NuGet package
+      run: dotnet pack BBRAPIModules/BBRAPIModules.csproj --configuration Release --output ./nuget
 
-    # - name: Zip Published Files
-    #   run: |
-    #     cd ./publish
-    #     find . -type f ! -name '*.pdb' -exec zip -r ../${{ steps.extract-tag-name.outputs.tag_name }}.zip {} \;
+    - name: Zip Published Files
+      run: |
+        cd ./publish
+        find . -type f ! -name '*.pdb' -exec zip -r ../${{ steps.extract-tag-name.outputs.tag_name }}.zip {} \;
     
     - name: Generate changelog
       id: generate-changelog
@@ -54,24 +54,20 @@ jobs:
         git fetch --tags
         tag_name="${{ steps.extract-tag-name.outputs.tag_name }}"
         previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
-        echo Previous tag is $previous_tag
         changelog=$(git log --pretty=format:"- %s" $previous_tag..$tag_name)
-        echo "THE CHANGE LOG IS"
-        echo $changelog
-        echo "END OF CHANGELOG"
         echo "$changelog" >> ${{ github.workspace }}-CHANGELOG.txt
         
-    # - name: Publish Release Assets
-    #   id: publish-assets
-    #   uses: softprops/action-gh-release@v1
-    #   with:
-    #     files: |
-    #       ${{ steps.extract-tag-name.outputs.tag_name }}.zip
-    #       nuget/*.nupkg
-    #     tag_name: ${{ steps.extract-tag-name.outputs.tag_name }}
-    #     body_path: ${{ github.workspace }}-CHANGELOG.txt
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Publish Release Assets
+      id: publish-assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ${{ steps.extract-tag-name.outputs.tag_name }}.zip
+          nuget/*.nupkg
+        tag_name: ${{ steps.extract-tag-name.outputs.tag_name }}
+        body_path: ${{ github.workspace }}-CHANGELOG.txt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-check-on-commits:
     runs-on: ubuntu-latest
