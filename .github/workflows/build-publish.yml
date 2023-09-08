@@ -35,7 +35,7 @@ jobs:
       run: dotnet restore
 
     - name: Build and Publish project
-      run: dotnet publish BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release -o ./publish
+      run: dotnet publish BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release -o ./publish --self-contained false --framework net6.0
 
     - name: Build nuget
       run: dotnet build BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release
