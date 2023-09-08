@@ -81,7 +81,7 @@ jobs:
 
     - name: Build project and check for errors on non-main branch commits
       run: |
-        dotnet build --configuration Release --no-restore
+        dotnet build --configuration Release
         if [ $? -ne 0 ]; then
           echo "Build failed"
           exit 1
