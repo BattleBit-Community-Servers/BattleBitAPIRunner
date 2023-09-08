@@ -50,18 +50,14 @@ jobs:
       id: generate-changelog
       run: |
         git fetch --tags
-        git tag
         tag_name="${{ steps.extract-tag-name.outputs.tag_name }}"
-        what_the_fuck_is_happening=$(git rev-list --tags)
-        echo What the fuck: $what_the_fuck_is_happening
-
-    #     previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=2 --max-count=1))
-    #     echo Previous tag is $previous_tag
-    #     changelog=$(git log --pretty=format:"- %s" $previous_tag..$tag_name)
-    #     echo "THE CHANGE LOG IS"
-    #     echo $changelog
-    #     echo "END OF CHANGELOG"
-    #     echo "$changelog" >> ${{ github.workspace }}-CHANGELOG.txt
+        previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
+        echo Previous tag is $previous_tag
+        changelog=$(git log --pretty=format:"- %s" $previous_tag..$tag_name)
+        echo "THE CHANGE LOG IS"
+        echo $changelog
+        echo "END OF CHANGELOG"
+        echo "$changelog" >> ${{ github.workspace }}-CHANGELOG.txt
         
     # - name: Publish Release Assets
     #   id: publish-assets
