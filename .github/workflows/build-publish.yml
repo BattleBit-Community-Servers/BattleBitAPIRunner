@@ -18,7 +18,10 @@ jobs:
     steps:
     - name: Extract Tag Name
       id: extract-tag-name
-      run: echo "{tag_name}={$(basename ${{ github.ref }})}" >> $GITHUB_OUTPUT
+      run: |
+        echo "{tag_name}={$(basename ${{ github.ref }})}" >> $GITHUB_OUTPUT
+        echo $(basename ${{ github.ref }})
+        echo $GITHUB_OUTPUT
 
     - name: Checkout code
       uses: actions/checkout@v4
@@ -43,9 +46,8 @@ jobs:
     - name: Zip Published Files
       run: |
         cd ./publish
-        find . -type f ! -name '*.pdb' -exec zip -r ./${{ steps.extract-tag-name.outputs.tag_name }}.zip {} \;
+        find . -type f ! -name '*.pdb' -exec zip -r ../${{ steps.extract-tag-name.outputs.tag_name }}.zip {} \;
     
-
     - name: Generate changelog
       id: generate-changelog
       run: |
