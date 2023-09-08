@@ -49,6 +49,8 @@ jobs:
     - name: Generate changelog
       id: generate-changelog
       run: |
+        git fetch --tags
+        git tag
         tag_name="${{ steps.extract-tag-name.outputs.tag_name }}"
         what_the_fuck_is_happening=$(git rev-list --tags)
         echo What the fuck: $what_the_fuck_is_happening
