@@ -50,7 +50,7 @@ jobs:
       id: generate-changelog
       run: |
         tag_name="${{ steps.extract-tag-name.outputs.tag_name }}"
-        what_the_fuck_is_happening=$(git rev-list --tags --max-count=8)
+        what_the_fuck_is_happening=$(git rev-list --tags)
         echo What the fuck: $what_the_fuck_is_happening
 
     #     previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=2 --max-count=1))
