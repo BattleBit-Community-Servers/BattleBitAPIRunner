@@ -42,7 +42,8 @@ jobs:
 
     - name: Zip Published Files
       run: |
-        find ./publish -type f ! -name '*.pdb' -exec zip -r ./${{ steps.extract-tag-name.outputs.tag_name }}.zip {} \;
+        cd ./publish
+        find . -type f ! -name '*.pdb' -exec zip -r ./${{ steps.extract-tag-name.outputs.tag_name }}.zip {} \;
     
 
     - name: Generate changelog
