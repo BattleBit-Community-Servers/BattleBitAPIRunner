@@ -112,7 +112,7 @@ namespace BattleBitAPIRunner
             this.Name = this.getName();
             if (Path.GetFileNameWithoutExtension(this.ModuleFilePath) != this.Name)
             {
-                throw new Exception($"Module {Path.GetFileName(this.ModuleFilePath)} does not have the same name as the class that inherits from {nameof(BattleBitModule)}");
+                throw new Exception($"Module {Path.GetFileName(this.ModuleFilePath)} does not have the same name as the class {this.Name} that inherits from {nameof(BattleBitModule)}");
             }
             this.getDependencies();
 
