@@ -453,6 +453,8 @@ namespace BattleBitAPIRunner
                 }
             }
 
+            battleBitModules = battleBitModules.Where(m => m.Server is not null).ToList();
+
             foreach (BattleBitModule battleBitModule in battleBitModules)
             {
                 // Resolve references
@@ -540,22 +542,11 @@ namespace BattleBitAPIRunner
 
             // Create instance of type of the property if it doesn't exist
             ModuleConfiguration? configurationValue = property.GetValue(module) as ModuleConfiguration;
-            if (configurationValue is null)
-            {
-                configurationValue = Activator.CreateInstance(property.PropertyType) as ModuleConfiguration;
-                configurationValue!.Initialize(module, property, serverName);
-                configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
-                configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
-
-                if (!File.Exists(filePath))
-                {
-                    File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
-                }
-            }
 
             if (File.Exists(filePath))
             {
                 configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType) as ModuleConfiguration;
+                
                 if (configurationValue is null)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -565,11 +556,22 @@ namespace BattleBitAPIRunner
                     module.Unload();
                     return;
                 }
-                configurationValue.Initialize(module, property, serverName);
-                configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
-                configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
-                property.SetValue(module, configurationValue);
             }
+
+            if (configurationValue is null)
+            {
+                configurationValue = Activator.CreateInstance(property.PropertyType) as ModuleConfiguration;
+
+                if (!File.Exists(filePath))
+                {
+                    File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
+                }
+            }
+
+            configurationValue!.Initialize(module, property, serverName);
+            configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
+            configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
+            property.SetValue(module, configurationValue);
         }
 
         private void startServerListener()
