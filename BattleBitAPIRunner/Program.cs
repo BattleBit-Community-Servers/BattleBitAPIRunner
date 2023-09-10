@@ -182,6 +182,11 @@ namespace BattleBitAPIRunner
                     continue;
                 }
 
+                foreach (RunnerServer commandServer in this.servers)
+                {
+                    commandServer.invokeOnModules(nameof(BattleBitModule.OnConsoleCommand), command).Wait();
+                }
+
                 switch (commandParts[0])
                 {
                     case "servers":
@@ -546,7 +551,7 @@ namespace BattleBitAPIRunner
             if (File.Exists(filePath))
             {
                 configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType) as ModuleConfiguration;
-                
+
                 if (configurationValue is null)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;

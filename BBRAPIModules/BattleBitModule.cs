@@ -26,6 +26,7 @@ namespace BBRAPIModules
 
         public virtual void OnModulesLoaded() { } // sighs silently
         public virtual void OnModuleUnloading() { }
+        public virtual void OnConsoleCommand(string command) { }
 
         #region GameServer.cs copy-paste
         // TODO: there must be a better way to do this!?
