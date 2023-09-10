@@ -73,11 +73,11 @@ public class Logger : BattleBitModule
     }
     public override async Task OnPlayerChangedRole(RunnerPlayer player, GameRole role)
     {
-        
+        Console.WriteLine($"{timestampString} | {"T-OPCR",8} | Player: {player.ToString()} | Role: {role}");
     }
     public override async Task OnPlayerJoinedSquad(RunnerPlayer player, Squad<RunnerPlayer> squad)
     {
-         Console.WriteLine($"{timestampString} | {"T-PJS",8} | Player: {player.ToString()} | Role: {player.Role}");
+        Console.WriteLine($"{timestampString} | {"T-PJS",8} | Player: {player.ToString()} | Role: {player.Role}");
     }
     public override async Task OnPlayerLeftSquad(RunnerPlayer player, Squad<RunnerPlayer> squad)
     {
