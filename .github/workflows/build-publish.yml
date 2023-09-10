@@ -1,0 +1,91 @@
+name: Build and Publish
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - '*'
+
+jobs:
+  build-publish-on-main:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - name: Extract Tag Name
+      id: extract-tag-name
+      run: |
+        echo "tag_name=$(basename ${{ github.ref }})" >> $GITHUB_OUTPUT
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v3.0.3
+      with:
+        dotnet-version: 6
+
+    - name: NuGet Restore
+      run: dotnet restore
+
+    - name: Build and Publish project
+      run: dotnet publish BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release -o ./publish --self-contained false --framework net6.0 --runtime win-x64
+
+    - name: Build nuget
+      run: dotnet build BattleBitAPIRunner/BattleBitAPIRunner.csproj -c Release
+
+    - name: Create NuGet package
+      run: dotnet pack BBRAPIModules/BBRAPIModules.csproj --configuration Release --output ./nuget
+
+    - name: Zip Published Files
+      run: |
+        cd ./publish
+        find . -type f ! -name '*.pdb' -exec zip -r ../${{ steps.extract-tag-name.outputs.tag_name }}.zip {} \;
+    
+    - name: Generate changelog
+      id: generate-changelog
+      run: |
+        git fetch --tags
+        tag_name="${{ steps.extract-tag-name.outputs.tag_name }}"
+        previous_tag=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
+        changelog=$(git log --pretty=format:"- %s" $previous_tag..$tag_name)
+        echo "$changelog" >> ${{ github.workspace }}-CHANGELOG.txt
+        
+    - name: Publish Release Assets
+      id: publish-assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ${{ steps.extract-tag-name.outputs.tag_name }}.zip
+          nuget/*.nupkg
+        tag_name: ${{ steps.extract-tag-name.outputs.tag_name }}
+        body_path: ${{ github.workspace }}-CHANGELOG.txt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-check-on-commits:
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v3.0.3
+      with:
+        dotnet-version: 6
+
+    - name: Build project and check for errors on non-main branch commits
+      run: |
+        dotnet build --configuration Release
+        if [ $? -ne 0 ]; then
+          echo "Build failed"
+          exit 1
+        fi

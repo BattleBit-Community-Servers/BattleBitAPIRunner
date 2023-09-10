@@ -1,6 +1,7 @@
 ﻿using BattleBitAPI.Common;
 using BattleBitAPI.Server;
 using BBRAPIModules;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -30,6 +31,7 @@ namespace BattleBitAPIRunner
         {
             loadConfiguration();
             validateConfiguration();
+            Console.WriteLine("Loading dependencies...");
             loadDependencies();
             loadModules();
             hookModules();
@@ -84,7 +86,7 @@ namespace BattleBitAPIRunner
                                 try
                                 {
                                     changedModule = new(moduleFile);
-                                    changedModule.Compile();
+                                    changedModule.Compile(this.binaryDependencies);
                                 }
                                 catch (Exception ex)
                                 {
@@ -142,11 +144,19 @@ namespace BattleBitAPIRunner
                 Directory.CreateDirectory(this.configuration.DependencyPath);
             }
 
+            List<PortableExecutableReference> binaryDependencies = new();
+
             foreach (string dependency in Directory.GetFiles(this.configuration.DependencyPath, "*.dll"))
             {
-                Assembly.LoadFrom(dependency);
+                binaryDependencies.Add(MetadataReference.CreateFromFile(dependency));
             }
+
+            this.binaryDependencies = binaryDependencies.ToArray();
+
+            Module.LoadContext(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
         }
+
+        private PortableExecutableReference[] binaryDependencies = Array.Empty<PortableExecutableReference>();
 
         private void consoleCommandHandler()
         {
@@ -170,6 +180,11 @@ namespace BattleBitAPIRunner
                 if (commandParts.Length == 0)
                 {
                     continue;
+                }
+
+                foreach (RunnerServer commandServer in this.servers)
+                {
+                    commandServer.invokeOnModules(nameof(BattleBitModule.OnConsoleCommand), command).Wait();
                 }
 
                 switch (commandParts[0])
@@ -216,7 +231,7 @@ namespace BattleBitAPIRunner
 
                         string moduleName = commandParts[1];
 
-                        Module? moduleToLoad = Module.Modules.FirstOrDefault(m => m.Name.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
+                        Module? moduleToLoad = Module.Modules.FirstOrDefault(m => m.Name!.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
 
                         if (moduleToLoad is null)
                         {
@@ -230,7 +245,7 @@ namespace BattleBitAPIRunner
                         try
                         {
                             loadedModule = new(moduleToLoad.ModuleFilePath);
-                            loadedModule.Compile();
+                            loadedModule.Compile(this.binaryDependencies);
                         }
                         catch (Exception ex)
                         {
@@ -257,7 +272,7 @@ namespace BattleBitAPIRunner
                 List<BattleBitModule> instances = new();
                 foreach (Module module in Module.Modules)
                 {
-                    BattleBitModule? moduleInstance = server.GetModule(module.ModuleType);
+                    BattleBitModule? moduleInstance = server.GetModule(module.ModuleType!);
                     if (moduleInstance is null)
                     {
                         continue;
@@ -274,19 +289,21 @@ namespace BattleBitAPIRunner
             }
 
             Module.UnloadContext();
+            Module.LoadContext(Directory.GetFiles(this.configuration.DependencyPath, "*.dll"));
         }
 
         private void loadModules()
         {
-            Module[] modules = Directory.GetFiles(this.configuration.ModulesPath, "*.cs").Union(this.configuration.Modules).Where(f => Module.Modules.All(m => m.Name != Path.GetFileNameWithoutExtension(f))).Select(m =>
+            string[] moduleFiles = Directory.GetFiles(this.configuration.ModulesPath, "*.cs").Union(this.configuration.Modules).ToArray();
+            Module[] modules = moduleFiles.Where(f => Module.Modules.All(m => m.Name != Path.GetFileNameWithoutExtension(f))).Select(m =>
             {
                 try { return new Module(m); }
                 catch (Exception ex)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"Failed to load module {Path.GetFileName(m)}");
-                    Console.ResetColor();
                     Console.WriteLine(ex.ToString());
+                    Console.ResetColor();
                     return null;
                 }
             }).Where(m => m is not null).Select(m => m!).Union(Module.Modules).ToArray();
@@ -296,14 +313,14 @@ namespace BattleBitAPIRunner
                 Module.RemoveModule(toRemove);
             }
 
-            foreach (Module toWatch in modules)
+            foreach (string toWatch in moduleFiles)
             {
-                if (this.watchedFiles.ContainsKey(toWatch.ModuleFilePath))
+                if (this.watchedFiles.ContainsKey(toWatch))
                 {
                     continue;
                 }
 
-                this.watchedFiles.Add(toWatch.ModuleFilePath, (CalculateFileHash(new FileInfo(toWatch.ModuleFilePath)), File.GetLastWriteTime(toWatch.ModuleFilePath)));
+                this.watchedFiles.Add(toWatch, (CalculateFileHash(new FileInfo(toWatch)), File.GetLastWriteTime(toWatch)));
             }
 
             Module[][] duplicateModules = modules.GroupBy(m => m.Name).Where(g => g.Count() > 1).Select(g => g.ToArray()).ToArray();
@@ -330,7 +347,7 @@ namespace BattleBitAPIRunner
             {
                 try
                 {
-                    string[] missingRequirements = module.RequiredDependencies.Where(r => sortedModules.All(m => m.Name != r)).ToArray();
+                    string[] missingRequirements = module.RequiredDependencies!.Where(r => sortedModules.All(m => m.Name != r)).ToArray();
                     if (missingRequirements.Length > 0)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
@@ -342,7 +359,7 @@ namespace BattleBitAPIRunner
 
                     if (module.AssemblyBytes is null)
                     {
-                        module.Compile();
+                        module.Compile(this.binaryDependencies);
                         compiledModuleCount++;
                     }
 
@@ -369,7 +386,7 @@ namespace BattleBitAPIRunner
             foreach (RunnerServer server in this.servers)
             {
                 loadServerModules(server);
-                server.OnConnected();
+                _ = server.OnConnected();
             }
         }
 
@@ -393,10 +410,10 @@ namespace BattleBitAPIRunner
 
             foreach (Module module in Module.Modules)
             {
-                BattleBitModule moduleInstance;
+                BattleBitModule? moduleInstance;
                 try
                 {
-                    moduleInstance = Activator.CreateInstance(module.ModuleType) as BattleBitModule;
+                    moduleInstance = Activator.CreateInstance(module.ModuleType!) as BattleBitModule;
                     if (moduleInstance is null)
                     {
                         throw new Exception($"Not inheriting from {nameof(BattleBitModule)}");
@@ -415,7 +432,7 @@ namespace BattleBitAPIRunner
                 }
 
                 // Module configurations
-                foreach (PropertyInfo property in module.ModuleType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly).Where(p => p.PropertyType.IsAssignableTo(typeof(ModuleConfiguration))))
+                foreach (PropertyInfo property in module.ModuleType!.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly).Where(p => p.PropertyType.IsAssignableTo(typeof(ModuleConfiguration))))
                 {
                     try
                     {
@@ -424,7 +441,7 @@ namespace BattleBitAPIRunner
                             throw new Exception($"Configuration does not inherit from {nameof(ModuleConfiguration)}");
                         }
 
-                        ModuleConfiguration moduleConfiguration = Activator.CreateInstance(property.PropertyType) as ModuleConfiguration;
+                        ModuleConfiguration moduleConfiguration = (Activator.CreateInstance(property.PropertyType) as ModuleConfiguration)!;
                         moduleConfiguration.Initialize(moduleInstance, property, $"{ip ?? server.GameIP}_{port ?? server.GamePort}");
                         moduleConfiguration.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
                         moduleConfiguration.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
@@ -440,6 +457,8 @@ namespace BattleBitAPIRunner
                     }
                 }
             }
+
+            battleBitModules = battleBitModules.Where(m => m.Server is not null).ToList();
 
             foreach (BattleBitModule battleBitModule in battleBitModules)
             {
@@ -500,7 +519,7 @@ namespace BattleBitAPIRunner
 
             if (!Directory.Exists(Path.GetDirectoryName(filePath)))
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             }
 
             object? configurationValue = property.GetValue(module);
@@ -523,17 +542,30 @@ namespace BattleBitAPIRunner
 
             if (!Directory.Exists(Path.GetDirectoryName(filePath)))
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             }
 
             // Create instance of type of the property if it doesn't exist
             ModuleConfiguration? configurationValue = property.GetValue(module) as ModuleConfiguration;
+
+            if (File.Exists(filePath))
+            {
+                configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType) as ModuleConfiguration;
+
+                if (configurationValue is null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Failed to load configuration {property.Name} for module {module.GetType().Name}.");
+                    Console.ResetColor();
+
+                    module.Unload();
+                    return;
+                }
+            }
+
             if (configurationValue is null)
             {
                 configurationValue = Activator.CreateInstance(property.PropertyType) as ModuleConfiguration;
-                configurationValue!.Initialize(module, property, serverName);
-                configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
-                configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
 
                 if (!File.Exists(filePath))
                 {
@@ -541,14 +573,10 @@ namespace BattleBitAPIRunner
                 }
             }
 
-            if (File.Exists(filePath))
-            {
-                configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType) as ModuleConfiguration;
-                configurationValue.Initialize(module, property, serverName);
-                configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
-                configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
-                property.SetValue(module, configurationValue);
-            }
+            configurationValue!.Initialize(module, property, serverName);
+            configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
+            configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
+            property.SetValue(module, configurationValue);
         }
 
         private void startServerListener()

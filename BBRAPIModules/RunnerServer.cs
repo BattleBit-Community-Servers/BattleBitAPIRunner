@@ -1,6 +1,7 @@
 ﻿using BattleBitAPI.Common;
 using BattleBitAPI.Server;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace BBRAPIModules
 {
@@ -48,7 +49,7 @@ namespace BBRAPIModules
             {
                 try
                 {
-                    stopwatch.Start();
+                    stopwatch.Restart();
                     bool moduleResult = await (Task<bool>)typeof(BattleBitModule).GetMethod(method).Invoke(module, parameters);
 
                     if (!moduleResult)
@@ -81,7 +82,7 @@ namespace BBRAPIModules
             {
                 try
                 {
-                    stopwatch.Start();
+                    stopwatch.Restart();
                     OnPlayerSpawnArguments? moduleResult = await (Task<OnPlayerSpawnArguments?>)typeof(BattleBitModule).GetMethod(method).Invoke(module, new object?[] { player, previousValidSpawnArguments });
 
                     if (moduleResult is not null)
@@ -114,14 +115,14 @@ namespace BBRAPIModules
             return result;
         }
 
-        private async Task invokeOnModules(string method, params object?[] parameters)
+        internal async Task invokeOnModules(string method, params object?[] parameters)
         {
             Stopwatch stopwatch = new();
             foreach (BattleBitModule module in this.modules)
             {
                 try
                 {
-                    stopwatch.Start();
+                    stopwatch.Restart();
                     await (Task)typeof(BattleBitModule).GetMethod(method).Invoke(module, parameters);
                 }
                 catch (Exception ex)
