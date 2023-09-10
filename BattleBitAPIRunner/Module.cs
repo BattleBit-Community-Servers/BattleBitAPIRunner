@@ -133,7 +133,7 @@ namespace BattleBitAPIRunner
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.Write(this.Name);
                 Console.ResetColor();
-                Console.WriteLine($" has {this.RequiredDepe                ndencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
+                Console.WriteLine($" has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
                 Console.WriteLine();
             }
         }
