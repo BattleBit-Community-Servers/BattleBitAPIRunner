@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using System.Text;
 using System.Collections.ObjectModel;
 
-namespace BBRAPIModuleVerfication;
+namespace BBRAPIModuleVerification;
 
 internal class Program
 {
@@ -15,7 +15,7 @@ internal class Program
     {
         if (args.Length != 1)
         {
-            Console.WriteLine("Usage: BBRAPIModuleVerfication <path to module.cs>");
+            Console.WriteLine("Usage: BBRAPIModuleVerification <path to module.cs>");
             return;
         }
 

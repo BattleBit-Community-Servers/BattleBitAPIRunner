@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "BBRAPIModuleVerfication": {
+    "BBRAPIModuleVerification": {
       "commandName": "Project",
       "commandLineArgs": "E:\\Create\\Development\\Software\\C#\\BattleBit\\BattleBitBaseModules\\SpectateControl.cs"
     }

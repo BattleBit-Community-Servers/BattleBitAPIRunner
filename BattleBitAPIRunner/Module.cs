@@ -15,7 +15,7 @@ using System.Runtime.Loader;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-[assembly: InternalsVisibleTo("BBRAPIModuleVerfication")]
+[assembly: InternalsVisibleTo("BBRAPIModuleVerification")]
 
 namespace BattleBitAPIRunner
 {
