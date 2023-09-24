@@ -45,45 +45,51 @@ namespace BattleBitAPIRunner
 
         public static void LoadContext(string[] dependencies)
         {
+            if (baseReferences is null)
+            {
+                loadReferences(dependencies);
+            }
+
             loadDepedencies(dependencies);
         }
 
 
-        private static void loadDepedencies(string[] dependencies)
+
+        private static void loadReferences(string[] dependencies)
         {
             List<PortableExecutableReference> references = new()
             {
                 MetadataReference.CreateFromFile(typeof(BattleBitModule).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(Player<>).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(RunnerServer).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(GameServer<>).Assembly.Location),
             };
 
             foreach (string dll in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location)!, "*.dll"))
             {
+
                 if (!IsAssemblyValidReference(dll))
                 {
                     continue;
                 }
 
                 references.Add(MetadataReference.CreateFromFile(dll));
-                try
-                {
-                    moduleContext.LoadFromAssemblyPath(Path.GetFullPath(dll));
-                }
-                catch
-                {
 
-                }
             }
 
             foreach (string dependency in dependencies)
             {
-                moduleContext.LoadFromAssemblyPath(Path.GetFullPath(dependency));
+
                 references.Add(MetadataReference.CreateFromFile(Path.GetFullPath(dependency)));
             }
 
             baseReferences = references.ToArray();
+        }
+
+        private static void loadDepedencies(string[] dependencies)
+        {
+            foreach (string dependency in dependencies)
+            {
+                moduleContext.LoadFromAssemblyPath(Path.GetFullPath(dependency));
+            }
         }
 
         public static void UnloadContext()
