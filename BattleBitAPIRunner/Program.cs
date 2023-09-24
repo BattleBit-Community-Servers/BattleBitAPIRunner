@@ -550,7 +550,7 @@ namespace BattleBitAPIRunner
 
             if (File.Exists(filePath))
             {
-                configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType) as ModuleConfiguration;
+                configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType, new JsonSerializerSettings() { ObjectCreationHandling = ObjectCreationHandling.Replace }) as ModuleConfiguration;
 
                 if (configurationValue is null)
                 {
