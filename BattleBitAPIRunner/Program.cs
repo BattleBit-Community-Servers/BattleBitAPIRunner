@@ -182,9 +182,25 @@ namespace BattleBitAPIRunner
                     continue;
                 }
 
-                foreach (RunnerServer commandServer in this.servers)
+                foreach (RunnerServer server in this.servers)
                 {
-                    commandServer.invokeOnModules(nameof(BattleBitModule.OnConsoleCommand), command).Wait();
+                    List<BattleBitModule> instances = new();
+                    foreach (Module module in Module.Modules)
+                    {
+                        BattleBitModule? moduleInstance = server.GetModule(module.ModuleType!);
+                        if (moduleInstance is null)
+                        {
+                            continue;
+                        }
+
+                        instances.Add(moduleInstance);
+                        moduleInstance.OnConsoleCommand(command);
+                    }
+
+                    foreach (BattleBitModule moduleInstance in instances)
+                    {
+                        moduleInstance.Unload();
+                    }
                 }
 
                 switch (commandParts[0])
