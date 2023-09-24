@@ -182,6 +182,27 @@ namespace BattleBitAPIRunner
                     continue;
                 }
 
+                foreach (RunnerServer server in this.servers)
+                {
+                    List<BattleBitModule> instances = new();
+                    foreach (Module module in Module.Modules)
+                    {
+                        BattleBitModule? moduleInstance = server.GetModule(module.ModuleType!);
+                        if (moduleInstance is null)
+                        {
+                            continue;
+                        }
+
+                        instances.Add(moduleInstance);
+                        moduleInstance.OnConsoleCommand(command);
+                    }
+
+                    foreach (BattleBitModule moduleInstance in instances)
+                    {
+                        moduleInstance.Unload();
+                    }
+                }
+
                 switch (commandParts[0])
                 {
                     case "servers":
@@ -453,6 +474,8 @@ namespace BattleBitAPIRunner
                 }
             }
 
+            battleBitModules = battleBitModules.Where(m => m.Server is not null).ToList();
+
             foreach (BattleBitModule battleBitModule in battleBitModules)
             {
                 // Resolve references
@@ -540,22 +563,11 @@ namespace BattleBitAPIRunner
 
             // Create instance of type of the property if it doesn't exist
             ModuleConfiguration? configurationValue = property.GetValue(module) as ModuleConfiguration;
-            if (configurationValue is null)
-            {
-                configurationValue = Activator.CreateInstance(property.PropertyType) as ModuleConfiguration;
-                configurationValue!.Initialize(module, property, serverName);
-                configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
-                configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
-
-                if (!File.Exists(filePath))
-                {
-                    File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
-                }
-            }
 
             if (File.Exists(filePath))
             {
-                configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType) as ModuleConfiguration;
+                configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType, new JsonSerializerSettings() { ObjectCreationHandling = ObjectCreationHandling.Replace }) as ModuleConfiguration;
+
                 if (configurationValue is null)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -565,11 +577,22 @@ namespace BattleBitAPIRunner
                     module.Unload();
                     return;
                 }
-                configurationValue.Initialize(module, property, serverName);
-                configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
-                configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
-                property.SetValue(module, configurationValue);
             }
+
+            if (configurationValue is null)
+            {
+                configurationValue = Activator.CreateInstance(property.PropertyType) as ModuleConfiguration;
+
+                if (!File.Exists(filePath))
+                {
+                    File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
+                }
+            }
+
+            configurationValue!.Initialize(module, property, serverName);
+            configurationValue.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
+            configurationValue.OnSavingRequest += ModuleConfiguration_OnSavingRequest;
+            property.SetValue(module, configurationValue);
         }
 
         private void startServerListener()

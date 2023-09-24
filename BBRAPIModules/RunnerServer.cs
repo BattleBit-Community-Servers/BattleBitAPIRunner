@@ -1,6 +1,7 @@
 ﻿using BattleBitAPI.Common;
 using BattleBitAPI.Server;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace BBRAPIModules
 {
@@ -114,7 +115,7 @@ namespace BBRAPIModules
             return result;
         }
 
-        private async Task invokeOnModules(string method, params object?[] parameters)
+        internal async Task invokeOnModules(string method, params object?[] parameters)
         {
             Stopwatch stopwatch = new();
             foreach (BattleBitModule module in this.modules)
