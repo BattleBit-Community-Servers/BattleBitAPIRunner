@@ -15,6 +15,8 @@ using System.Runtime.Loader;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using BattleBitAPI.Server;
+
 [assembly: InternalsVisibleTo("BBRAPIModuleVerification")]
 
 namespace BattleBitAPIRunner
@@ -43,49 +45,45 @@ namespace BattleBitAPIRunner
 
         public static void LoadContext(string[] dependencies)
         {
-            if (baseReferences is null)
-            {
-                loadReferences(dependencies);
-            }
-
             loadDepedencies(dependencies);
         }
 
-        private static void loadReferences(string[] dependencies)
+
+        private static void loadDepedencies(string[] dependencies)
         {
             List<PortableExecutableReference> references = new()
             {
                 MetadataReference.CreateFromFile(typeof(BattleBitModule).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(Player<>).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(RunnerServer).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(GameServer<>).Assembly.Location),
             };
 
             foreach (string dll in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location)!, "*.dll"))
             {
-
                 if (!IsAssemblyValidReference(dll))
                 {
                     continue;
                 }
 
                 references.Add(MetadataReference.CreateFromFile(dll));
+                try
+                {
+                    moduleContext.LoadFromAssemblyPath(Path.GetFullPath(dll));
+                }
+                catch
+                {
 
+                }
             }
 
             foreach (string dependency in dependencies)
             {
-
+                moduleContext.LoadFromAssemblyPath(Path.GetFullPath(dependency));
                 references.Add(MetadataReference.CreateFromFile(Path.GetFullPath(dependency)));
             }
 
             baseReferences = references.ToArray();
-        }
-
-        private static void loadDepedencies(string[] dependencies)
-        {
-            foreach (string dependency in dependencies)
-            {
-                moduleContext.LoadFromAssemblyPath(Path.GetFullPath(dependency));
-            }
         }
 
         public static void UnloadContext()
@@ -123,7 +121,7 @@ namespace BattleBitAPIRunner
             {
                 throw new Exception($"Module {Path.GetFileName(this.ModuleFilePath)} does not have the same name as the class {this.Name} that inherits from {nameof(BattleBitModule)}");
             }
-            
+
             this.getDependencies();
             this.getMetadata();
 
@@ -215,7 +213,7 @@ namespace BattleBitAPIRunner
             modules.Add(this);
         }
 
-        public static PortableExecutableReference[]? baseReferences = null;
+        public static PortableExecutableReference[] baseReferences = null!;
 
         public void Compile(PortableExecutableReference[]? extraReferences = null)
         {
@@ -232,21 +230,7 @@ namespace BattleBitAPIRunner
                 Console.ResetColor();
             }
 
-            List<PortableExecutableReference> references = new()
-            {
-                MetadataReference.CreateFromFile(typeof(BattleBitModule).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Player<>).Assembly.Location),
-            };
-
-            foreach (string dll in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location), "*.dll"))
-            {
-                if (!IsAssemblyValidReference(dll))
-                {
-                    continue;
-                }
-
-                references.Add(MetadataReference.CreateFromFile(dll));
-            }
+            List<PortableExecutableReference> references = new(baseReferences);
 
             foreach (Module module in modules)
             {
