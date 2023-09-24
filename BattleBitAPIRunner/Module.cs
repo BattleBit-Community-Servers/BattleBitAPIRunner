@@ -1,4 +1,5 @@
-﻿using BattleBitAPI;
+﻿using BattleBitAPI.Common;
+using BattleBitAPI;
 using BBRAPIModules;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -14,6 +15,7 @@ using System.Runtime.Loader;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+[assembly: InternalsVisibleTo("BBRAPIModuleVerification")]
 
 namespace BattleBitAPIRunner
 {
@@ -26,6 +28,8 @@ namespace BattleBitAPIRunner
         public AssemblyLoadContext? Context { get; private set; }
         public Type? ModuleType { get; private set; }
         public string? Name { get; private set; }
+        public string? Description { get; private set; }
+        public string? Version { get; private set; }
         public string[]? RequiredDependencies { get; private set; }
         public string[]? OptionalDependencies { get; private set; }
         public byte[] AssemblyBytes { get; private set; } = null!;
@@ -33,6 +37,7 @@ namespace BattleBitAPIRunner
         public string ModuleFilePath { get; }
         public Assembly? ModuleAssembly { get; private set; }
 
+        internal static bool logToConsole = true;
         private SyntaxTree syntaxTree = null!;
         private string code = null!;
 
@@ -102,26 +107,52 @@ namespace BattleBitAPIRunner
 
         private void initialize()
         {
-            Console.Write("Parsing module from file ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(Path.GetFileName(this.ModuleFilePath));
-            Console.ResetColor();
+            if (logToConsole)
+            {
+                Console.Write("Parsing module from file ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(Path.GetFileName(this.ModuleFilePath));
+                Console.ResetColor();
+            }
 
             this.code = File.ReadAllText(this.ModuleFilePath);
             this.syntaxTree = CSharpSyntaxTree.ParseText(code, null, this.ModuleFilePath, Encoding.UTF8);
             this.Name = this.getName();
+
             if (Path.GetFileNameWithoutExtension(this.ModuleFilePath) != this.Name)
             {
                 throw new Exception($"Module {Path.GetFileName(this.ModuleFilePath)} does not have the same name as the class {this.Name} that inherits from {nameof(BattleBitModule)}");
             }
+            
             this.getDependencies();
+            this.getMetadata();
 
-            Console.Write("Module ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write(this.Name);
-            Console.ResetColor();
-            Console.WriteLine($" has {this.RequiredDependencies!.Length} required and {this.OptionalDependencies!.Length} optional dependencies");
-            Console.WriteLine();
+            if (logToConsole)
+            {
+                Console.Write("Module ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write(this.Name);
+                Console.ResetColor();
+                Console.WriteLine($" has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
+                Console.WriteLine();
+            }
+        }
+
+        private void getMetadata()
+        {
+            IEnumerable<AttributeSyntax> attributeSyntaxes = syntaxTree.GetRoot().DescendantNodes().OfType<AttributeSyntax>();
+            IEnumerable<AttributeSyntax> moduleAttributes = attributeSyntaxes.Where(x => x.Name.ToString() + "Attribute" == nameof(ModuleAttribute));
+            if (moduleAttributes.Count() != 1)
+            {
+                throw new Exception("Module must have exactly one ModuleAttribute");
+            }
+
+            AttributeSyntax moduleAttribute = moduleAttributes.First();
+            IEnumerable<AttributeArgumentSyntax> moduleAttributeArguments = moduleAttribute.ArgumentList?.Arguments ?? throw new Exception("ModuleAttribute must have arguments");
+            AttributeArgumentSyntax descriptionArgument = moduleAttributeArguments.ElementAtOrDefault(0) ?? throw new Exception("ModuleAttribute must have a description argument");
+            AttributeArgumentSyntax versionArgument = moduleAttributeArguments.ElementAtOrDefault(1) ?? throw new Exception("ModuleAttribute must have a version argument");
+            this.Description = descriptionArgument.Expression.ToString().Trim('"');
+            this.Version = versionArgument.Expression.ToString().Trim('"');
         }
 
         private void getDependencies()
@@ -193,11 +224,29 @@ namespace BattleBitAPIRunner
                 return;
             }
 
-            Console.Write("Compiling module ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(this.Name);
-            Console.ResetColor();
-            List<PortableExecutableReference> references = new(baseReferences!);
+            if (logToConsole)
+            {
+                Console.Write("Compiling module ");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(this.Name);
+                Console.ResetColor();
+            }
+
+            List<PortableExecutableReference> references = new()
+            {
+                MetadataReference.CreateFromFile(typeof(BattleBitModule).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Player<>).Assembly.Location),
+            };
+
+            foreach (string dll in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location), "*.dll"))
+            {
+                if (!IsAssemblyValidReference(dll))
+                {
+                    continue;
+                }
+
+                references.Add(MetadataReference.CreateFromFile(dll));
+            }
 
             foreach (Module module in modules)
             {
