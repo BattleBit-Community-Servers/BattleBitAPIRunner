@@ -59,7 +59,7 @@ Modules are loaded upon startup. To reload modules or their configuration,type `
 
 ### Installing modules
 
-You can find approved modules on [our Discord](https://discord.gg/FTkj9xUvHh). We recommend to only download approved modules which have been checked by our staff for malicious or dangerous code.
+You can find approved modules in the [Module Repository](https://modules.battlebit.community). We recommend to only download approved modules which have been checked by our staff for malicious or dangerous code.
 Place modules in the modules folder or specify their path in the configuration file.
 Place binary dependencies in the dependencies folder.
 
