@@ -21,8 +21,6 @@ internal class Program
 
         string filePath = args[0];
 
-        Module.logToConsole = false;
-
         Module module;
         try
         {

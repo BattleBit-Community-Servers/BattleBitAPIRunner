@@ -1,6 +1,9 @@
 ﻿using BattleBitAPI.Common;
 using BattleBitAPI.Server;
 using BBRAPIModules;
+using log4net;
+using log4net.Config;
+using log4net.Core;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.Extensions.Configuration;
@@ -22,16 +25,21 @@ namespace BattleBitAPIRunner
             new Program();
         }
 
+        private ILog logger = null!;
+
         private ServerConfiguration configuration = new();
         private List<RunnerServer> servers = new();
         private ServerListener<RunnerPlayer, RunnerServer> serverListener = new();
         private Dictionary<string, (string Hash, DateTime LastModified)> watchedFiles = new();
+        private Permissions permissions = null!;
 
         public Program()
         {
+            configureLogger();
             loadConfiguration();
             validateConfiguration();
-            Console.WriteLine("Loading dependencies...");
+            loadPermissions();
+            this.logger.Info("Loading dependencies");
             loadDependencies();
             loadModules();
             hookModules();
@@ -41,6 +49,47 @@ namespace BattleBitAPIRunner
             consoleCommandHandler();
 
             Thread.Sleep(-1);
+        }
+
+        private void loadPermissions()
+        {
+            this.permissions = new(configuration.ConfigurationPath);
+            this.watchedFiles.Add(Path.Combine(this.configuration.ConfigurationPath, Permissions.PermissionsFile), (string.Empty, DateTime.MinValue));
+            this.watchedFiles.Add(Path.Combine(this.configuration.ConfigurationPath, Permissions.PlayerPermissionsFile), (string.Empty, DateTime.MinValue));
+            this.watchedFiles.Add(Path.Combine(this.configuration.ConfigurationPath, Permissions.PlayerGroupsFile), (string.Empty, DateTime.MinValue));
+        }
+
+        private void configureLogger()
+        {
+            string log4netConfig = "log4net.config";
+            if (!File.Exists(log4netConfig))
+            {
+                File.WriteAllText(log4netConfig, @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<log4net>
+    <root>
+        <level value=""INFO"" />
+        <appender-ref ref=""ColoredConsoleAppender"" />
+    </root>
+    <appender name=""ColoredConsoleAppender"" type=""log4net.Appender.ColoredConsoleAppender"">
+        <layout type=""log4net.Layout.PatternLayout"">
+            <conversionPattern value=""%date [%type{1}] %level - %message%newline"" />
+        </layout>
+		<mapping>
+			<level value=""WARN"" />
+			<foreColor value=""Yellow"" />
+		</mapping>
+		<mapping>
+			<level value=""ERROR"" />
+			<foreColor value=""Red"" />
+		</mapping>
+    </appender>
+</log4net>");
+            }
+
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            XmlConfigurator.Configure(new FileInfo(log4netConfig));
+
+            logger = LogManager.GetLogger("Runner");
         }
 
         private void fileWatchers()
@@ -90,9 +139,7 @@ namespace BattleBitAPIRunner
                                 }
                                 catch (Exception ex)
                                 {
-                                    Console.ForegroundColor = ConsoleColor.Red;
-                                    Console.WriteLine($"Could not hot reload module {changedModule?.Name ?? Path.GetFileNameWithoutExtension(moduleFile)}:{Environment.NewLine}{ex}{Environment.NewLine}Running module will be kept.");
-                                    Console.ResetColor();
+                                    logger.Error($"Could not hot reload module {changedModule?.Name ?? Path.GetFileNameWithoutExtension(moduleFile)}. Running module will be kept", ex);
                                     changedModules.Remove(moduleFile);
                                 }
                             }
@@ -118,7 +165,7 @@ namespace BattleBitAPIRunner
                         }
                         catch (Exception ex)
                         {
-                            await Console.Out.WriteLineAsync($"Failed dynamic loading of modules {string.Join(", ", changedModules.Select(f => Path.GetFileNameWithoutExtension(f)))}: {ex}");
+                            logger.Error($"Failed dynamic loading of modules {string.Join(", ", changedModules.Select(f => Path.GetFileNameWithoutExtension(f)))}", ex);
                         }
                     }
 
@@ -162,7 +209,7 @@ namespace BattleBitAPIRunner
         {
             if (Console.In is null)
             {
-                Console.WriteLine("No std in stream available.");
+                logger.Info("No std in stream available.");
                 return;
             }
 
@@ -172,7 +219,7 @@ namespace BattleBitAPIRunner
                 string? command = Console.ReadLine();
                 if (command is null)
                 {
-                    Console.WriteLine("No std in stream available.");
+                    logger.Info("No std in stream available.");
                     return;
                 }
 
@@ -239,9 +286,7 @@ namespace BattleBitAPIRunner
                     case "reload":
                         if (commandParts.Length < 2)
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("Usage: reload <module>");
-                            Console.ResetColor();
+                            logger.Error("Usage: reload <module>");
                             break;
                         }
 
@@ -251,9 +296,7 @@ namespace BattleBitAPIRunner
 
                         if (moduleToLoad is null)
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine($"Module {moduleName} not found.");
-                            Console.ResetColor();
+                            logger.Error($"Module {moduleName} not found.");
                             break;
                         }
 
@@ -265,9 +308,7 @@ namespace BattleBitAPIRunner
                         }
                         catch (Exception ex)
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine($"Could not hot reload module {loadedModule?.Name ?? moduleToLoad.Name}:{Environment.NewLine}{ex}{Environment.NewLine}Running module will be kept.");
-                            Console.ResetColor();
+                            logger.Error($"Could not hot reload module {loadedModule?.Name ?? moduleToLoad.Name}. Running module will be kept.", ex);
                             break;
                         }
 
@@ -316,10 +357,7 @@ namespace BattleBitAPIRunner
                 try { return new Module(m); }
                 catch (Exception ex)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Failed to load module {Path.GetFileName(m)}");
-                    Console.WriteLine(ex.ToString());
-                    Console.ResetColor();
+                    logger.Error($"Failed to load module {Path.GetFileName(m)}", ex);
                     return null;
                 }
             }).Where(m => m is not null).Select(m => m!).Union(Module.Modules).ToArray();
@@ -344,12 +382,10 @@ namespace BattleBitAPIRunner
             {
                 foreach (Module[] duplicate in duplicateModules)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Duplicate modules found for {duplicate[0].Name}:");
-                    Console.ResetColor();
+                    logger.Error($"Duplicate modules found for {duplicate[0].Name}");
                     foreach (Module module in duplicate)
                     {
-                        Console.WriteLine($"  {module.ModuleFilePath}");
+                        logger.Error($"  {module.ModuleFilePath}");
                     }
                 }
                 throw new Exception("Duplicate modules found, aborting startup.");
@@ -366,10 +402,11 @@ namespace BattleBitAPIRunner
                     string[] missingRequirements = module.RequiredDependencies!.Where(r => sortedModules.All(m => m.Name != r)).ToArray();
                     if (missingRequirements.Length > 0)
                     {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"Module {module.Name} is missing required dependencies:");
-                        Console.ResetColor();
-                        Console.WriteLine($"{string.Join(Environment.NewLine, missingRequirements)}");
+                        logger.Error($"Module {module.Name} is missing required dependencies:");
+                        foreach (string missingRequirement in missingRequirements)
+                        {
+                            logger.Error($"  {missingRequirement}");
+                        }
                         continue;
                     }
 
@@ -383,21 +420,14 @@ namespace BattleBitAPIRunner
                 }
                 catch (Exception ex)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Failed to load module {Path.GetFileName(module.Name)}");
-                    Console.ResetColor();
-                    Console.WriteLine(ex.ToString());
+                    logger.Error($"Failed to load module {Path.GetFileName(module.Name)}", ex);
                     continue;
                 }
 
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write($"Loaded module ");
-                Console.ResetColor();
-                Console.WriteLine(module.Name);
+                logger.Info($"Loaded module {module.Name}");
             }
 
-            Console.WriteLine();
-            Console.WriteLine($"{(compiledModuleCount == Module.Modules.Count ? Module.Modules.Count.ToString() : $"{compiledModuleCount} changed, {Module.Modules.Count} total")} module{(Module.Modules.Count != 1 ? "s" : "")} loaded.");
+            logger.Info($"{(compiledModuleCount == Module.Modules.Count ? Module.Modules.Count.ToString() : $"{compiledModuleCount} changed, {Module.Modules.Count} total")} module{(Module.Modules.Count != 1 ? "s" : "")} loaded.");
 
             foreach (RunnerServer server in this.servers)
             {
@@ -410,9 +440,10 @@ namespace BattleBitAPIRunner
         {
             this.serverListener.OnCreatingGameServerInstance = initializeGameServer;
         }
+
         private RunnerServer initializeGameServer(IPAddress ip, ushort port)
         {
-            RunnerServer server = new RunnerServer();
+            RunnerServer server = new RunnerServer(ip, port, this.configuration.WarningThreshold);
             this.servers.Add(server);
 
             loadServerModules(server, ip, port);
@@ -434,16 +465,16 @@ namespace BattleBitAPIRunner
                     {
                         throw new Exception($"Not inheriting from {nameof(BattleBitModule)}");
                     }
+                    ILog logger = LogManager.GetLogger($"{module.Name} of {ip ?? server.GameIP}:{port ?? server.GamePort}");
+                    moduleInstance.SetPermissions(this.permissions);
+                    moduleInstance.SetLogger(logger);
                     moduleInstance.SetServer(server);
                     server.AddModule(moduleInstance);
                     battleBitModules.Add(moduleInstance);
                 }
                 catch (Exception ex)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Failed to load module {module.Name}:");
-                    Console.ResetColor();
-                    Console.WriteLine(ex.ToString());
+                    logger.Error($"Failed to load module {module.Name}", ex);
                     continue;
                 }
 
@@ -465,10 +496,7 @@ namespace BattleBitAPIRunner
                     }
                     catch (Exception ex)
                     {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"Failed to load module {module.Name} configuration {property.Name}:");
-                        Console.ResetColor();
-                        Console.WriteLine(ex.ToString());
+                        logger.Error($"Failed to load module {module.Name} configuration {property.Name}", ex);
                         continue;
                     }
                 }
@@ -508,18 +536,13 @@ namespace BattleBitAPIRunner
                 }
                 catch (Exception ex)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} threw an exception:");
-                    Console.ResetColor();
-                    Console.WriteLine(ex.ToString());
+                    logger.Error($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} threw an exception", ex);
                 }
                 stopwatch.Stop();
 
                 if (stopwatch.ElapsedMilliseconds > this.configuration.WarningThreshold)
                 {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} took {stopwatch.ElapsedMilliseconds}ms to execute.");
-                    Console.ResetColor();
+                    logger.Warn($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} took {stopwatch.ElapsedMilliseconds}ms to execute.");
                 }
             }
         }
@@ -570,9 +593,7 @@ namespace BattleBitAPIRunner
 
                 if (configurationValue is null)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Failed to load configuration {property.Name} for module {module.GetType().Name}.");
-                    Console.ResetColor();
+                    logger.Error($"Failed to load configuration {property.Name} for module {module.GetType().Name}.");
 
                     module.Unload();
                     return;
@@ -600,17 +621,13 @@ namespace BattleBitAPIRunner
             this.serverListener.LogLevel = this.configuration.LogLevel;
             this.serverListener.OnLog += this.serverListener_OnLog;
             this.serverListener.Start(this.configuration.IPAddress, this.configuration.Port!.Value);
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write($"Listener started at ");
-            Console.ResetColor();
-            Console.WriteLine($"{this.configuration.IPAddress}:{this.configuration.Port.Value}");
+
+            logger.Info($"Listener started at {this.configuration.IPAddress}:{this.configuration.Port.Value}");
         }
 
         private void serverListener_OnLog(LogLevel level, string message, object? obj)
         {
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"[{level}] {message}");
-            Console.ResetColor();
+            logger.Info($"[{level}] {message}");
         }
 
         private void loadConfiguration()
@@ -625,6 +642,11 @@ namespace BattleBitAPIRunner
                 .AddJsonFile("appsettings.json")
                 .Build()
                 .Bind(this.configuration);
+
+            if (!Directory.Exists(this.configuration.ConfigurationPath))
+            {
+                Directory.CreateDirectory(this.configuration.ConfigurationPath);
+            }
         }
 
         private void validateConfiguration()

@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using BattleBitAPI.Server;
+using log4net;
 
 [assembly: InternalsVisibleTo("BBRAPIModuleVerification")]
 
@@ -39,7 +40,8 @@ namespace BattleBitAPIRunner
         public string ModuleFilePath { get; }
         public Assembly? ModuleAssembly { get; private set; }
 
-        internal static bool logToConsole = true;
+        private static ILog logger = LogManager.GetLogger("Runner");
+
         private SyntaxTree syntaxTree = null!;
         private string code = null!;
 
@@ -61,6 +63,7 @@ namespace BattleBitAPIRunner
             {
                 MetadataReference.CreateFromFile(typeof(BattleBitModule).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(Player<>).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(ILog).Assembly.Location),
             };
 
             foreach (string dll in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location)!, "*.dll"))
@@ -111,13 +114,7 @@ namespace BattleBitAPIRunner
 
         private void initialize()
         {
-            if (logToConsole)
-            {
-                Console.Write("Parsing module from file ");
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine(Path.GetFileName(this.ModuleFilePath));
-                Console.ResetColor();
-            }
+            logger.Info($"Parsing module from file {Path.GetFileName(this.ModuleFilePath)}");
 
             this.code = File.ReadAllText(this.ModuleFilePath);
             this.syntaxTree = CSharpSyntaxTree.ParseText(code, null, this.ModuleFilePath, Encoding.UTF8);
@@ -130,16 +127,8 @@ namespace BattleBitAPIRunner
 
             this.getDependencies();
             this.getMetadata();
-
-            if (logToConsole)
-            {
-                Console.Write("Module ");
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write(this.Name);
-                Console.ResetColor();
-                Console.WriteLine($" has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
-                Console.WriteLine();
-            }
+            
+            logger.Info($"Module {this.Name} has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
         }
 
         private void getMetadata()
@@ -189,10 +178,7 @@ namespace BattleBitAPIRunner
 
         public void Load()
         {
-            Console.Write("Loading module ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(this.Name);
-            Console.ResetColor();
+            logger.Info($"Loading module {this.Name}");
 
             if (this.AssemblyBytes == null)
             {
@@ -228,13 +214,7 @@ namespace BattleBitAPIRunner
                 return;
             }
 
-            if (logToConsole)
-            {
-                Console.Write("Compiling module ");
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine(this.Name);
-                Console.ResetColor();
-            }
+            logger.Info($"Compiling module {this.Name}");
 
             List<PortableExecutableReference> references = new(baseReferences);
 

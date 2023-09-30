@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>BattleBit Remastered Modular Community Server API</Title>
-		<AssemblyVersion>1.0.0</AssemblyVersion>
+		<AssemblyVersion>1.1.1</AssemblyVersion>
 		<FileVersion>$(AssemblyVersion)</FileVersion>
 		<Version>$(AssemblyVersion)</Version>
 		<Authors>RainOrigami</Authors>
@@ -22,6 +22,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="ModuleLogger.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <None Include="..\README.md">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
@@ -30,6 +34,7 @@
 
 	<ItemGroup>
 	  <PackageReference Include="CommunityServerAPI" Version="1.0.7.1" />
+	  <PackageReference Include="log4net" Version="2.0.15" />
 	</ItemGroup>
 
 	<ItemGroup>

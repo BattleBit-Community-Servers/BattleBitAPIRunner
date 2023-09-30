@@ -1,5 +1,6 @@
 ﻿using BattleBitAPI.Common;
 using BattleBitAPI.Server;
+using log4net;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("BattleBitAPIRunner")]
@@ -9,12 +10,25 @@ namespace BBRAPIModules
     public abstract class BattleBitModule
     {
         public RunnerServer Server { get; private set; }
+        public Permissions Permissions { get; private set; }
 
         public bool IsLoaded { get; internal set; }
+
+        public ILog Logger { get; private set; }
 
         internal void SetServer(RunnerServer server)
         {
             this.Server = server;
+        }
+
+        internal void SetPermissions(Permissions permissions)
+        {
+            this.Permissions = permissions;
+        }
+
+        internal void SetLogger(ILog logger)
+        {
+            this.Logger = logger;
         }
 
         public void Unload()
