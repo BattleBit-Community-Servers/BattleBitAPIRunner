@@ -10,7 +10,6 @@ namespace BBRAPIModules
     public abstract class BattleBitModule
     {
         public RunnerServer Server { get; private set; }
-        public Permissions Permissions { get; private set; }
 
         public bool IsLoaded { get; internal set; }
 
@@ -19,11 +18,6 @@ namespace BBRAPIModules
         internal void SetServer(RunnerServer server)
         {
             this.Server = server;
-        }
-
-        internal void SetPermissions(Permissions permissions)
-        {
-            this.Permissions = permissions;
         }
 
         internal void SetLogger(ILog logger)
