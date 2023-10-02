@@ -14,6 +14,8 @@ internal class Program
             return;
         }
 
+        Module.LoadContext(Array.Empty<string>());
+
         string filePath = args[0];
 
         Module module;
