@@ -547,7 +547,7 @@ namespace BattleBitAPIRunner
                 return; // nothing to save
             }
 
-            File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, new JsonSerializerOptions()
+            File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, configurationValue.GetType(), new JsonSerializerOptions()
             {
                 WriteIndented = true
             }));
@@ -589,7 +589,7 @@ namespace BattleBitAPIRunner
 
                 if (!File.Exists(filePath))
                 {
-                    File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, new JsonSerializerOptions()
+                    File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, configurationValue!.GetType(), new JsonSerializerOptions()
                     {
                         WriteIndented = true
                     }));
