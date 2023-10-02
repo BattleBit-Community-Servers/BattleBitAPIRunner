@@ -547,10 +547,17 @@ namespace BattleBitAPIRunner
                 return; // nothing to save
             }
 
-            File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, configurationValue.GetType(), new JsonSerializerOptions()
+            try
             {
-                WriteIndented = true
-            }));
+                File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, configurationValue.GetType(), new JsonSerializerOptions()
+                {
+                    WriteIndented = true
+                }));
+            }
+            catch (Exception ex)
+            {
+                this.logger.Error($"Failed to save configuration {property.Name} for module {module.GetType().Name}.", ex);
+            }
         }
 
         private void ModuleConfiguration_OnLoadingRequest(object? sender, BattleBitModule module, PropertyInfo property, string serverName)
