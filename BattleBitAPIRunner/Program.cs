@@ -62,7 +62,7 @@ namespace BattleBitAPIRunner
     </root>
     <appender name=""ColoredConsoleAppender"" type=""log4net.Appender.ColoredConsoleAppender"">
         <layout type=""log4net.Layout.PatternLayout"">
-            <conversionPattern value=""%date [%type{1}] %level - %message%newline"" />
+            <conversionPattern value=""%date [%logger] %level - %message%newline"" />
         </layout>
 		<mapping>
 			<level value=""WARN"" />
