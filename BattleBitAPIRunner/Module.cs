@@ -1,22 +1,15 @@
-﻿using BattleBitAPI.Common;
-using BattleBitAPI;
+﻿using BattleBitAPI;
 using BBRAPIModules;
+using log4net;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using BattleBitAPI.Server;
-using log4net;
 
 [assembly: InternalsVisibleTo("BBRAPIModuleVerification")]
 
@@ -127,7 +120,7 @@ namespace BattleBitAPIRunner
 
             this.getDependencies();
             this.getMetadata();
-            
+
             logger.Info($"Module {this.Name} has {this.RequiredDependencies.Length} required and {this.OptionalDependencies.Length} optional dependencies");
         }
 

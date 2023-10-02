@@ -3,18 +3,15 @@ using BattleBitAPI.Server;
 using BBRAPIModules;
 using log4net;
 using log4net.Config;
-using log4net.Core;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Operations;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
-using System.Xml.Linq;
+using System.Text.Json;
 
 namespace BattleBitAPIRunner
 {
@@ -550,7 +547,10 @@ namespace BattleBitAPIRunner
                 return; // nothing to save
             }
 
-            File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
+            File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, new JsonSerializerOptions()
+            {
+                WriteIndented = true
+            }));
         }
 
         private void ModuleConfiguration_OnLoadingRequest(object? sender, BattleBitModule module, PropertyInfo property, string serverName)
@@ -572,7 +572,7 @@ namespace BattleBitAPIRunner
 
             if (File.Exists(filePath))
             {
-                configurationValue = JsonConvert.DeserializeObject(File.ReadAllText(filePath), property.PropertyType, new JsonSerializerSettings() { ObjectCreationHandling = ObjectCreationHandling.Replace }) as ModuleConfiguration;
+                configurationValue = JsonSerializer.Deserialize(File.ReadAllText(filePath), property.PropertyType) as ModuleConfiguration;
 
                 if (configurationValue is null)
                 {
@@ -589,7 +589,10 @@ namespace BattleBitAPIRunner
 
                 if (!File.Exists(filePath))
                 {
-                    File.WriteAllText(filePath, JsonConvert.SerializeObject(configurationValue, Formatting.Indented));
+                    File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, new JsonSerializerOptions()
+                    {
+                        WriteIndented = true
+                    }));
                 }
             }
 
@@ -617,7 +620,10 @@ namespace BattleBitAPIRunner
         {
             if (!File.Exists("appsettings.json"))
             {
-                File.WriteAllText("appsettings.json", JsonConvert.SerializeObject(this.configuration, Formatting.Indented));
+                File.WriteAllText("appsettings.json", JsonSerializer.Serialize(this.configuration, new JsonSerializerOptions()
+                {
+                    WriteIndented = true
+                }));
             }
 
             new ConfigurationBuilder()

@@ -3,7 +3,6 @@ using BattleBitAPI.Server;
 using log4net;
 using System.Diagnostics;
 using System.Net;
-using System.Runtime.CompilerServices;
 
 namespace BBRAPIModules
 {
