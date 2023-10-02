@@ -31,14 +31,12 @@ namespace BattleBitAPIRunner
         private List<RunnerServer> servers = new();
         private ServerListener<RunnerPlayer, RunnerServer> serverListener = new();
         private Dictionary<string, (string Hash, DateTime LastModified)> watchedFiles = new();
-        private Permissions permissions = null!;
 
         public Program()
         {
             configureLogger();
             loadConfiguration();
             validateConfiguration();
-            loadPermissions();
             this.logger.Info("Loading dependencies");
             loadDependencies();
             loadModules();
@@ -49,14 +47,6 @@ namespace BattleBitAPIRunner
             consoleCommandHandler();
 
             Thread.Sleep(-1);
-        }
-
-        private void loadPermissions()
-        {
-            this.permissions = new(configuration.ConfigurationPath);
-            this.watchedFiles.Add(Path.Combine(this.configuration.ConfigurationPath, Permissions.PermissionsFile), (string.Empty, DateTime.MinValue));
-            this.watchedFiles.Add(Path.Combine(this.configuration.ConfigurationPath, Permissions.PlayerPermissionsFile), (string.Empty, DateTime.MinValue));
-            this.watchedFiles.Add(Path.Combine(this.configuration.ConfigurationPath, Permissions.PlayerGroupsFile), (string.Empty, DateTime.MinValue));
         }
 
         private void configureLogger()
@@ -213,7 +203,6 @@ namespace BattleBitAPIRunner
                 return;
             }
 
-            // TODO: Make proper console handler ncurses style (separate line for input, rest of window for output)
             while (true)
             {
                 string? command = Console.ReadLine();
@@ -242,11 +231,6 @@ namespace BattleBitAPIRunner
 
                         instances.Add(moduleInstance);
                         moduleInstance.OnConsoleCommand(command);
-                    }
-
-                    foreach (BattleBitModule moduleInstance in instances)
-                    {
-                        moduleInstance.Unload();
                     }
                 }
 
@@ -466,7 +450,6 @@ namespace BattleBitAPIRunner
                         throw new Exception($"Not inheriting from {nameof(BattleBitModule)}");
                     }
                     ILog logger = LogManager.GetLogger($"{module.Name} of {ip ?? server.GameIP}:{port ?? server.GamePort}");
-                    moduleInstance.SetPermissions(this.permissions);
                     moduleInstance.SetLogger(logger);
                     moduleInstance.SetServer(server);
                     server.AddModule(moduleInstance);
