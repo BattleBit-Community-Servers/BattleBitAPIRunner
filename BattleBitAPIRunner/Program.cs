@@ -11,6 +11,7 @@ using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace BattleBitAPIRunner
@@ -551,6 +552,7 @@ namespace BattleBitAPIRunner
             {
                 File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, configurationValue.GetType(), new JsonSerializerOptions()
                 {
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
                     WriteIndented = true
                 }));
             }
@@ -598,6 +600,7 @@ namespace BattleBitAPIRunner
                 {
                     File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, configurationValue!.GetType(), new JsonSerializerOptions()
                     {
+                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
                         WriteIndented = true
                     }));
                 }
@@ -629,6 +632,7 @@ namespace BattleBitAPIRunner
             {
                 File.WriteAllText("appsettings.json", JsonSerializer.Serialize(this.configuration, new JsonSerializerOptions()
                 {
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
                     WriteIndented = true
                 }));
             }
