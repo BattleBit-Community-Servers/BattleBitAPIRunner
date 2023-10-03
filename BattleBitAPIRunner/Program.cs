@@ -56,9 +56,9 @@ namespace BattleBitAPIRunner
 <log4net>
     <root>
         <level value=""INFO"" />
-        <appender-ref ref=""ColoredConsoleAppender"" />
+        <appender-ref ref=""ManagedColoredConsoleAppender"" />
     </root>
-    <appender name=""ColoredConsoleAppender"" type=""log4net.Appender.ColoredConsoleAppender"">
+    <appender name=""ManagedColoredConsoleAppender"" type=""log4net.Appender.ManagedColoredConsoleAppender"">
         <layout type=""log4net.Layout.PatternLayout"">
             <conversionPattern value=""%date [%logger] %level - %message%newline"" />
         </layout>
