@@ -1,4 +1,4 @@
-﻿using BattleBitAPI.Common;
+using BattleBitAPI.Common;
 using BattleBitAPI.Server;
 using BBRAPIModules;
 using log4net;
@@ -22,6 +22,13 @@ namespace BattleBitAPIRunner
         {
             new Program();
         }
+
+        internal static readonly JsonSerializerOptions JsonSerializerOptions = new JsonSerializerOptions()
+        {
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            WriteIndented = true,
+            AllowTrailingCommas = true
+        };
 
         private ILog logger = null!;
 
@@ -550,11 +557,7 @@ namespace BattleBitAPIRunner
 
             try
             {
-                File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, configurationValue.GetType(), new JsonSerializerOptions()
-                {
-                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                    WriteIndented = true
-                }));
+                File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, configurationValue.GetType(), Program.JsonSerializerOptions));
             }
             catch (Exception ex)
             {
@@ -598,11 +601,7 @@ namespace BattleBitAPIRunner
 
                 if (!File.Exists(filePath))
                 {
-                    File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, configurationValue!.GetType(), new JsonSerializerOptions()
-                    {
-                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                        WriteIndented = true
-                    }));
+                    File.WriteAllText(filePath, JsonSerializer.Serialize(configurationValue, configurationValue!.GetType(), Program.JsonSerializerOptions));
                 }
             }
 
@@ -630,11 +629,7 @@ namespace BattleBitAPIRunner
         {
             if (!File.Exists("appsettings.json"))
             {
-                File.WriteAllText("appsettings.json", JsonSerializer.Serialize(this.configuration, new JsonSerializerOptions()
-                {
-                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                    WriteIndented = true
-                }));
+                File.WriteAllText("appsettings.json", JsonSerializer.Serialize(this.configuration, Program.JsonSerializerOptions));
             }
 
             new ConfigurationBuilder()
