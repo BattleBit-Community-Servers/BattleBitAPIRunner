@@ -507,11 +507,6 @@ namespace BattleBitAPIRunner
                 {
                     try
                     {
-                        if (!property.PropertyType.IsAssignableTo(typeof(ModuleConfiguration)))
-                        {
-                            throw new Exception($"Configuration does not inherit from {nameof(ModuleConfiguration)}");
-                        }
-
                         ModuleConfiguration moduleConfiguration = (Activator.CreateInstance(property.PropertyType) as ModuleConfiguration)!;
                         moduleConfiguration.Initialize(moduleInstance, property, $"{ip ?? server.GameIP}_{port ?? server.GamePort}");
                         moduleConfiguration.OnLoadingRequest += ModuleConfiguration_OnLoadingRequest;
