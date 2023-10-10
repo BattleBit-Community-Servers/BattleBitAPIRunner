@@ -40,8 +40,40 @@ namespace BattleBitAPIRunner
         public Program()
         {
             configureLogger();
-            loadConfiguration();
-            validateConfiguration();
+
+            try
+            {
+                loadConfiguration();
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Failed to load configuration", ex);
+                Environment.Exit(-1);
+                return;
+            }
+
+            try
+            {
+                validateConfiguration();
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Failed to validate configuration", ex);
+                Environment.Exit(-1);
+                return;
+            }
+
+            try
+            {
+                prepareDirectories();
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Failed to prepare directories", ex);
+                Environment.Exit(-1);
+                return;
+            }
+
             this.logger.Info("Loading dependencies");
             loadDependencies();
             loadModules();
@@ -52,6 +84,14 @@ namespace BattleBitAPIRunner
             consoleCommandHandler();
 
             Thread.Sleep(-1);
+        }
+
+        private void prepareDirectories()
+        {
+            if (!Directory.Exists(this.configuration.ConfigurationPath))
+            {
+                Directory.CreateDirectory(this.configuration.ConfigurationPath);
+            }
         }
 
         private void configureLogger()
@@ -442,6 +482,7 @@ namespace BattleBitAPIRunner
 
         private void loadServerModules(RunnerServer server, IPAddress? ip = null, ushort? port = null)
         {
+            ILog logger = LogManager.GetLogger($"Runner of {ip ?? server.GameIP}:{port ?? server.GamePort}");
             List<BattleBitModule> battleBitModules = new();
 
             foreach (Module module in Module.Modules)
@@ -454,11 +495,6 @@ namespace BattleBitAPIRunner
                     {
                         throw new Exception($"Not inheriting from {nameof(BattleBitModule)}");
                     }
-                    ILog logger = LogManager.GetLogger($"{module.Name} of {ip ?? server.GameIP}:{port ?? server.GamePort}");
-                    moduleInstance.SetLogger(logger);
-                    moduleInstance.SetServer(server);
-                    server.AddModule(moduleInstance);
-                    battleBitModules.Add(moduleInstance);
                 }
                 catch (Exception ex)
                 {
@@ -484,10 +520,15 @@ namespace BattleBitAPIRunner
                     }
                     catch (Exception ex)
                     {
-                        logger.Error($"Failed to load module {module.Name} configuration {property.Name}", ex);
+                        logger.Error($"Failed to load configuration {property.Name} for module {module.Name}, not loading module.", ex);
                         continue;
                     }
                 }
+
+                moduleInstance.SetLogger(LogManager.GetLogger($"{module.Name} of {ip ?? server.GameIP}:{port ?? server.GamePort}"));
+                moduleInstance.SetServer(server);
+                server.AddModule(moduleInstance);
+                battleBitModules.Add(moduleInstance);
             }
 
             battleBitModules = battleBitModules.Where(m => m.Server is not null).ToList();
@@ -637,11 +678,6 @@ namespace BattleBitAPIRunner
                 .AddJsonFile("appsettings.json")
                 .Build()
                 .Bind(this.configuration);
-
-            if (!Directory.Exists(this.configuration.ConfigurationPath))
-            {
-                Directory.CreateDirectory(this.configuration.ConfigurationPath);
-            }
         }
 
         private void validateConfiguration()
