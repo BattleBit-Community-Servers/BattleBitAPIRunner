@@ -2,6 +2,7 @@
 
 Modular battlebit community server api runner. Lets you modify community servers with modules without having to code. If you know Umod/Rust.Oxide then you will be right at home.
 
+Get Modules: https://modules.battlebit.community  
 Join our Discord: https://discord.gg/FTkj9xUvHh
 
 # THIS IS NOT AN OFFICIAL BATTLEBIT TOOL, OR A SERVER LAUNCHER, IT IS JUST AN IMPLEMENTATION OF THE OFFICIAL API THAT CAN BE USED INSTEAD OF THE API. IT IS NOT ASSOCIATED WITH BATTLEBIT OR THEIR DEVELOPERS BUT IS A COMMUNITY MADE PRODUCT
