@@ -524,7 +524,7 @@ namespace BattleBitAPIRunner
                 }
                 catch (Exception ex)
                 {
-                    logger.Error($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} threw an exception", ex);
+                    logger.Error($"Method {nameof(battleBitModule.OnModulesLoaded)} on module {battleBitModule.GetType().Name} threw an exception", ex.InnerException);
                 }
                 stopwatch.Stop();
 
