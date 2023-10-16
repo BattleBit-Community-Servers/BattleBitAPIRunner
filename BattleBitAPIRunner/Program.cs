@@ -1,4 +1,4 @@
-using BattleBitAPI.Common;
+﻿using BattleBitAPI.Common;
 using BattleBitAPI.Server;
 using BBRAPIModules;
 using log4net;
