@@ -1,12 +1,25 @@
 ﻿using BattleBitAPI.Common;
 using BattleBitAPI.Server;
+using log4net;
 using System.Diagnostics;
+using System.Net;
 
 namespace BBRAPIModules
 {
     public class RunnerServer : GameServer<RunnerPlayer>
     {
+        private ILog logger;
         private List<BattleBitModule> modules = new();
+
+        private int warningThreshold;
+
+        public RunnerServer(IPAddress ip, ushort port, int warningThreshold)
+        {
+            this.logger = LogManager.GetLogger($"{this.GetType().Name} of {ip}:{port}");
+            this.warningThreshold = warningThreshold;
+
+            this.logger.Debug($"Instantiated {this.GetType().Name} on {ip}:{port}");
+        }
 
         public void AddModule(BattleBitModule module)
         {
@@ -58,14 +71,13 @@ namespace BBRAPIModules
                 }
                 catch (Exception ex)
                 {
-                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} threw an exception: {ex}");
+                    this.logger.Error($"Method {method} on module {module.GetType().Name} threw an exception", ex.InnerException);
                 }
                 stopwatch.Stop();
 
-                if (stopwatch.ElapsedMilliseconds > 250)
+                if (stopwatch.ElapsedMilliseconds > this.warningThreshold)
                 {
-                    // TODO: move this to a configurable field in ServerConfiguration
-                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} took {stopwatch.ElapsedMilliseconds}ms to execute.");
+                    this.logger.Warn($"Method {method} on module {module.GetType().Name} took {stopwatch.ElapsedMilliseconds}ms to execute.");
                 }
             }
             return result;
@@ -101,20 +113,19 @@ namespace BBRAPIModules
                 }
                 catch (Exception ex)
                 {
-                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} threw an exception: {ex}");
+                    this.logger.Error($"Method {method} on module {module.GetType().Name} threw an exception", ex.InnerException);
                 }
                 stopwatch.Stop();
 
-                if (stopwatch.ElapsedMilliseconds > 250)
+                if (stopwatch.ElapsedMilliseconds > this.warningThreshold)
                 {
-                    // TODO: move this to a configurable field in ServerConfiguration
-                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} took {stopwatch.ElapsedMilliseconds}ms to execute.");
+                    this.logger.Warn($"Method {method} on module {module.GetType().Name} took {stopwatch.ElapsedMilliseconds}ms to execute.");
                 }
             }
             return result;
         }
 
-        private async Task invokeOnModules(string method, params object?[] parameters)
+        internal async Task invokeOnModules(string method, params object?[] parameters)
         {
             Stopwatch stopwatch = new();
             foreach (BattleBitModule module in this.modules)
@@ -126,14 +137,13 @@ namespace BBRAPIModules
                 }
                 catch (Exception ex)
                 {
-                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} threw an exception: {ex}");
+                    this.logger.Error($"Method {method} on module {module.GetType().Name} threw an exception", ex.InnerException);
                 }
                 stopwatch.Stop();
 
-                if (stopwatch.ElapsedMilliseconds > 250)
+                if (stopwatch.ElapsedMilliseconds > this.warningThreshold)
                 {
-                    // TODO: move this to a configurable field in ServerConfiguration
-                    await Console.Out.WriteLineAsync($"Method {method} on module {module.GetType().Name} took {stopwatch.ElapsedMilliseconds}ms to execute.");
+                    this.logger.Warn($"Method {method} on module {module.GetType().Name} took {stopwatch.ElapsedMilliseconds}ms to execute.");
                 }
             }
         }

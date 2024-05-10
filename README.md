@@ -1,10 +1,11 @@
 # BattleBitAPIRunner
 
-Modular battlebit community server api runner. Lets you host community servers with modules without having to code. If you know Umod/Rust.Oxide then you will be right at home.
+Modular battlebit community server api runner. Lets you modify community servers with modules without having to code. If you know Umod/Rust.Oxide then you will be right at home.
 
+Get Modules: https://modules.battlebit.community  
 Join our Discord: https://discord.gg/FTkj9xUvHh
 
-# THIS IS NOT AN OFFICIAL BATTLEBIT TOOL, IT IS JUST AN IMPLEMENTATION OF THE OFFICIAL API THAT CAN BE USED INSTEAD OF THE API. IT IS NOT ASSOCIATED WITH BATTLEBIT OR THEIR DEVELOPERS BUT IS A COMMUNITY MADE PRODUCT
+# THIS IS NOT AN OFFICIAL BATTLEBIT TOOL, OR A SERVER LAUNCHER, IT IS JUST AN IMPLEMENTATION OF THE OFFICIAL API THAT CAN BE USED INSTEAD OF THE API. IT IS NOT ASSOCIATED WITH BATTLEBIT OR THEIR DEVELOPERS BUT IS A COMMUNITY MADE PRODUCT
 
 Hosting tutorial: https://www.youtube.com/watch?v=B8JNTL4-AxU  
 Module programming tutorial: https://www.youtube.com/watch?v=RN8891f0B14
@@ -59,7 +60,7 @@ Modules are loaded upon startup. To reload modules or their configuration,type `
 
 ### Installing modules
 
-You can find approved modules on [our Discord](https://discord.gg/FTkj9xUvHh). We recommend to only download approved modules which have been checked by our staff for malicious or dangerous code.
+You can find approved modules in the [Module Repository](https://modules.battlebit.community). We recommend to only download approved modules which have been checked by our staff for malicious or dangerous code.
 Place modules in the modules folder or specify their path in the configuration file.
 Place binary dependencies in the dependencies folder.
 

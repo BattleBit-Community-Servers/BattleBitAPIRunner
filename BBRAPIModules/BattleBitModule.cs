@@ -1,7 +1,6 @@
-﻿using BattleBitAPI;
-using BattleBitAPI.Common;
+﻿using BattleBitAPI.Common;
 using BattleBitAPI.Server;
-using System.Reflection;
+using log4net;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("BattleBitAPIRunner")]
@@ -14,44 +13,16 @@ namespace BBRAPIModules
 
         public bool IsLoaded { get; internal set; }
 
+        public ILog Logger { get; private set; }
+
         internal void SetServer(RunnerServer server)
         {
             this.Server = server;
         }
 
-        public void Call(string methodName, params object?[]? parameters)
+        internal void SetLogger(ILog logger)
         {
-            this.Call<object?>(methodName, parameters);
-        }
-
-        public T Call<T>(string methodName, params object?[]? parameters)
-        {
-            var method = this.GetType().GetMethod(methodName);
-            if (method == null)
-            {
-                return default(T);
-            }
-
-            ParameterInfo[] methodParameters = method.GetParameters();
-
-            List<object?> fullParameters = new(parameters ?? new object?[] { });
-
-            if (methodParameters.Length > 0 && methodParameters.Length != parameters?.Length)
-            {
-                for (int i = parameters?.Length ?? 0; i < methodParameters.Length; i++)
-                {
-                    if (methodParameters[i].IsOptional || methodParameters[i].HasDefaultValue)
-                    {
-                        fullParameters.Add(methodParameters[i].DefaultValue);
-                    }
-                    else
-                    {
-                        throw new ArgumentException($"Parameter {methodParameters[i].Name} is not optional and does not have a default value.");
-                    }
-                }
-            }
-
-            return (T)method.Invoke(this, fullParameters.ToArray());
+            this.Logger = logger;
         }
 
         public void Unload()
@@ -63,6 +34,7 @@ namespace BBRAPIModules
 
         public virtual void OnModulesLoaded() { } // sighs silently
         public virtual void OnModuleUnloading() { }
+        public virtual void OnConsoleCommand(string command) { }
 
         #region GameServer.cs copy-paste
         // TODO: there must be a better way to do this!?
