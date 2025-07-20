@@ -152,7 +152,7 @@ public class MyModuleConfiguration : ModuleConfiguration
 }
 public class MyModule : BattleBitModule
 {
-    public MyModuleConfiguration GlobalConfig { get; set; }
+    public static MyModuleConfiguration GlobalConfig { get; set; }
     public MyModuleConfiguration PerServerConfig { get; set; }
 }
 ```
